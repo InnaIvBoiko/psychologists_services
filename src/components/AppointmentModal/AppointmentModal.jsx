@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { createAppointment, getBookedSlots } from '../../strapi/strapi.js'
+import { generateSlots, isWorkingDay } from '../../utils/availability.js'
 import Modal from '../Modal/Modal.jsx'
 import MiniCalendar from './MiniCalendar.jsx'
 import styles from './AppointmentModal.module.css'
-
-const TIME_SLOTS = [
-  '09:00', '09:30', '10:00', '10:30',
-  '11:00', '11:30', '12:00', '12:30',
-  '13:00', '13:30', '14:00', '14:30',
-  '15:00', '15:30', '16:00', '16:30',
-  '17:00', '17:30',
-]
 
 function formatDateLabel(iso) {
   if (!iso) return ''
@@ -34,11 +27,15 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
+  const availability = psychologist.availability ?? null
+
   useEffect(() => {
     if (!selectedDate) return
     setSelectedTime(null)
     getBookedSlots(psychologist.id, selectedDate, token).then(setBookedSlots)
   }, [psychologist.id, selectedDate, token])
+
+  const availableSlots = selectedDate ? generateSlots(selectedDate, availability) : []
 
   const set = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -140,7 +137,11 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
 
           <div className="input-group">
             <label className={styles.timeSectionLabel}>Date</label>
-            <MiniCalendar selected={selectedDate} onChange={setSelectedDate} />
+            <MiniCalendar
+              selected={selectedDate}
+              onChange={setSelectedDate}
+              isDisabledDay={(iso) => !isWorkingDay(iso, availability)}
+            />
             {errors.date && <span className="input-error-msg">{errors.date}</span>}
           </div>
 
@@ -153,9 +154,11 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
             </label>
             {!selectedDate ? (
               <p className={styles.selectDateHint}>Select a date first to see available slots</p>
+            ) : availableSlots.length === 0 ? (
+              <p className={styles.selectDateHint}>No available slots on this day</p>
             ) : (
               <div className={styles.timeGrid}>
-                {TIME_SLOTS.map((t) => {
+                {availableSlots.map((t) => {
                   const isBooked = bookedSlots.includes(t)
                   return (
                     <button

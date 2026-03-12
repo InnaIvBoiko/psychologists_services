@@ -63,6 +63,9 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user"
+    },
+    "availability": {
+      "type": "json"
     }
   }
 }

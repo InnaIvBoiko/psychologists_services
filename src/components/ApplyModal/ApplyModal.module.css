@@ -7,6 +7,12 @@
   padding-right: 4px;
 }
 
+.availabilityHint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: -8px;
+}
+
 .subtitle {
   font-size: 0.85rem;
   color: var(--color-text-secondary);

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { submitPsychologistApplication } from '../../strapi/strapi.js'
+import { DEFAULT_AVAILABILITY } from '../../utils/availability.js'
 import Modal from '../Modal/Modal.jsx'
+import AvailabilityEditor from '../AvailabilityEditor/AvailabilityEditor.jsx'
 import styles from './ApplyModal.module.css'
 
 const SPECIALIZATIONS = [
@@ -32,6 +34,7 @@ const INITIAL_FORM = {
 export default function ApplyModal({ onClose }) {
   const { token } = useAuth()
   const [form, setForm] = useState(INITIAL_FORM)
+  const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -71,6 +74,8 @@ export default function ApplyModal({ onClose }) {
         initial_consultation: form.initial_consultation.trim() || 'Free consultation',
         avatar: form.avatar.trim() || null,
         about: form.about.trim(),
+        // availability is sent only after the backend schema is deployed to Strapi Cloud
+        // availability,
         rating: 0,
         popular: false,
         isAvailable: true,
@@ -213,6 +218,12 @@ export default function ApplyModal({ onClose }) {
               />
             </div>
           </div>
+
+          <p className={styles.sectionLabel}>Availability</p>
+          <p className={styles.availabilityHint}>
+            Set your working hours. Patients will only be able to book slots within these times.
+          </p>
+          <AvailabilityEditor value={availability} onChange={setAvailability} />
 
           <p className={styles.sectionLabel}>About you</p>
           <div className="input-group">

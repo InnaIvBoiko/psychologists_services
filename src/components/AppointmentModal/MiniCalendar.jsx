@@ -11,7 +11,7 @@ function toISO(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-export default function MiniCalendar({ selected, onChange }) {
+export default function MiniCalendar({ selected, onChange, isDisabledDay }) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -58,18 +58,21 @@ export default function MiniCalendar({ selected, onChange }) {
           const isToday = iso === toISO(today.getFullYear(), today.getMonth(), today.getDate())
           const isSelected = iso === selected
           const past = isPast(day)
+          const notWorking = !past && isDisabledDay?.(iso)
           return (
             <button
               key={iso}
               type="button"
-              disabled={past}
+              disabled={past || notWorking}
               onClick={() => onChange(iso)}
               className={[
                 styles.day,
                 isToday ? styles.today : '',
                 isSelected ? styles.selected : '',
                 past ? styles.past : '',
+                notWorking ? styles.notWorking : '',
               ].join(' ')}
+              title={notWorking ? 'Not available' : undefined}
             >
               {day}
             </button>
