@@ -254,6 +254,18 @@ Authentication is handled by the **Strapi Users & Permissions** plugin.
 
 ---
 
+## Documentation
+
+Detailed docs are in the [`/docs`](./docs) folder:
+
+- [Architecture](./docs/ARCHITECTURE.md) — system design, state management, key decisions
+- [API Reference](./docs/API.md) — all Strapi endpoints with request/response examples
+- [Component Reference](./docs/COMPONENTS.md) — props and behaviour of every component
+- [Deployment Guide](./docs/DEPLOYMENT.md) — Vercel + Strapi Cloud setup step by step
+- [Security](./docs/SECURITY.md) — auth model, env vars, CORS, known limitations
+
+---
+
 ## License
 
 MIT
