@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ApplyModal from '../../components/ApplyModal/ApplyModal.jsx'
 import styles from './HomePage.module.css'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const [applyOpen, setApplyOpen] = useState(false)
 
   return (
     <div className={styles.page}>
@@ -92,6 +95,41 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Join as psychologist CTA */}
+      <div className={styles.joinSection}>
+        <div className="container">
+          <div className={styles.joinInner}>
+            <div className={styles.joinContent}>
+              <h2 className={styles.joinTitle}>Are you a licensed psychologist?</h2>
+              <p className={styles.joinDesc}>
+                Join our platform and connect with patients who need your expertise.
+                Simple onboarding, flexible schedule, and a growing community of mental health professionals.
+              </p>
+              <ul className={styles.joinPerks}>
+                <li>✓ Free profile listing</li>
+                <li>✓ Online appointment management</li>
+                <li>✓ Reviewed & published within 2–3 days</li>
+              </ul>
+            </div>
+            <button
+              className="btn"
+              style={{
+                fontSize: '1rem',
+                padding: '14px 36px',
+                flexShrink: 0,
+                background: '#fff',
+                color: '#e06818',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-btn)',
+              }}
+              onClick={() => setApplyOpen(true)}
+            >
+              Apply now
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Features strip */}
       <div className={styles.features}>
         <div className="container">
@@ -111,6 +149,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {applyOpen && <ApplyModal onClose={() => setApplyOpen(false)} />}
     </div>
   )
 }

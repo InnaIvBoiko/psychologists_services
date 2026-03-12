@@ -83,6 +83,21 @@ export const togglePsychologistFavorite = async (documentId, jwt) => {
   }
 };
 
+// --- PSYCHOLOGIST APPLICATION ---
+export const submitPsychologistApplication = async (data, jwt) => {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (jwt) headers.Authorization = `Bearer ${jwt}`;
+    const response = await strapiApi.post('/psychologists?status=draft', {
+      data
+    }, { headers });
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting application:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.error?.message || "Failed to submit application");
+  }
+};
+
 // --- APPOINTMENTS ---
 // time_slot is stored as "YYYY-MM-DD HH:MM" — no extra date field needed in Strapi
 export const getBookedSlots = async (psychologistId, date, jwt) => {
