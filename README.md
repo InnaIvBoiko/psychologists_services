@@ -12,10 +12,11 @@ A full-stack web application to browse and book sessions with licensed psycholog
 - **Search & Filter** — Filter by name, surname, or specialization in real time
 - **Favorites** — Save preferred psychologists (requires login)
 - **Book Appointments** — Pick a date with the built-in calendar, select an available time slot, and submit a booking
-- **Slot Availability** — Already-booked time slots appear as disabled for the selected date
+- **Slot Availability** — Already-booked time slots are disabled; non-working days are greyed out in the calendar
+- **Psychologist Working Hours** — Each psychologist defines their own schedule (days, hours, session duration); slots are generated dynamically from that schedule
 - **Authentication** — Register and log in via Strapi Users & Permissions (JWT)
 - **Notification Bell** — View upcoming appointments directly in the header
-- **Apply as Psychologist** — Submit a professional application via modal form (saved as draft for admin review)
+- **Apply as Psychologist** — Submit a professional application including availability schedule; saved as **draft** pending admin approval before it becomes publicly visible
 - **404 Page** — Custom not-found page
 
 ---

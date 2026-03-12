@@ -74,8 +74,7 @@ export default function ApplyModal({ onClose }) {
         initial_consultation: form.initial_consultation.trim() || 'Free consultation',
         avatar: form.avatar.trim() || null,
         about: form.about.trim(),
-        // availability is sent only after the backend schema is deployed to Strapi Cloud
-        // availability,
+        availability,
         rating: 0,
         popular: false,
         isAvailable: true,

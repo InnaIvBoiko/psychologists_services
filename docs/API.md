@@ -125,7 +125,9 @@ No body required.
 POST /api/psychologists?status=draft
 ```
 
-Creates a new psychologist entry as a **draft** (not publicly visible until approved by admin).
+Creates a new psychologist entry as a **draft**.
+
+> **The profile is NOT publicly visible until an admin reviews it in the Strapi admin panel and clicks Publish.**
 
 > The `?status=draft` query parameter is required in Strapi v5. Passing `status` in the request body will cause a 400 error.
 
@@ -142,12 +144,28 @@ Creates a new psychologist entry as a **draft** (not publicly visible until appr
     "initial_consultation": "Free",
     "about": "...",
     "avatar": "👩‍⚕️",
+    "availability": {
+      "monday":    { "enabled": true,  "start": "09:00", "end": "17:00" },
+      "tuesday":   { "enabled": true,  "start": "09:00", "end": "17:00" },
+      "wednesday": { "enabled": true,  "start": "09:00", "end": "17:00" },
+      "thursday":  { "enabled": true,  "start": "09:00", "end": "17:00" },
+      "friday":    { "enabled": true,  "start": "09:00", "end": "17:00" },
+      "saturday":  { "enabled": false, "start": "10:00", "end": "14:00" },
+      "sunday":    { "enabled": false, "start": "10:00", "end": "14:00" },
+      "slot_duration": 60
+    },
     "rating": 0,
     "popular": false,
     "isAvailable": true
   }
 }
 ```
+
+**Draft & publish flow:**
+1. Application submitted → entry created as **draft** (invisible to public)
+2. Admin opens Strapi admin → `Content Manager → Psychologist`
+3. Admin reviews draft, makes any corrections
+4. Admin clicks **Publish** → profile becomes visible on `/psychologists`
 
 ---
 

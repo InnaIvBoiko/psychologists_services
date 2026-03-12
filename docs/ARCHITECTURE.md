@@ -44,6 +44,8 @@ src/
 ├── context/            # React context providers
 ├── hooks/              # Custom hooks
 ├── pages/              # Route-level page components
+├── utils/
+│   └── availability.js # Slot generation and working-hours logic
 └── strapi/strapi.js    # All Strapi API calls in one place
 ```
 
@@ -70,7 +72,9 @@ src/
 #### Psychologist
 - Collection type with **Draft & Publish** enabled
 - Core fields: `name`, `surname`, `specialization`, `experience`, `license`, `rating`, `price_per_hour`, `about`, `avatar`, `reviews` (JSON), `image` (media), `popular`, `isAvailable`
+- `availability` (JSON) — working hours schedule (see [Availability system](#availability-system) below)
 - New psychologist applications are created as **drafts** via `POST /api/psychologists?status=draft`
+- **Admin must manually review and publish each draft** before the profile becomes publicly visible
 
 #### Appointment
 - Collection type, **no Draft & Publish**
@@ -114,6 +118,63 @@ The response is then mapped to extract just the `HH:MM` portion to mark slots as
 ### Favorites stored as JSON on the User
 
 Strapi v5 does not easily support many-to-many relations between content types and Users without custom plugin work. Favorites are stored as a plain JSON array of `strapiId` strings on the user record (`psy_favorites`). Reads and writes go through the custom `toggle-favorite` endpoint.
+
+### Availability system
+
+Each psychologist has an `availability` JSON field that defines their weekly working hours and session duration:
+
+```json
+{
+  "monday":    { "enabled": true,  "start": "09:00", "end": "17:00" },
+  "tuesday":   { "enabled": true,  "start": "09:00", "end": "17:00" },
+  "wednesday": { "enabled": true,  "start": "09:00", "end": "17:00" },
+  "thursday":  { "enabled": true,  "start": "09:00", "end": "17:00" },
+  "friday":    { "enabled": true,  "start": "09:00", "end": "17:00" },
+  "saturday":  { "enabled": false, "start": "10:00", "end": "14:00" },
+  "sunday":    { "enabled": false, "start": "10:00", "end": "14:00" },
+  "slot_duration": 60
+}
+```
+
+The utility functions in `src/utils/availability.js` handle:
+
+| Function | Purpose |
+|---|---|
+| `parseAvailability(raw)` | Parses the JSON field, merges with defaults |
+| `isWorkingDay(isoDate, availability)` | Returns `true` if that date is a working day |
+| `generateSlots(isoDate, availability)` | Returns `["09:00", "10:00", ...]` for that date |
+| `generateTimeOptions()` | Returns all 30-min options from 06:00–22:00 for the editor |
+
+If a psychologist has no `availability` set, the default schedule is used (Mon–Fri 09:00–17:00, 60 min slots).
+
+The `AppointmentModal` uses these functions to:
+1. Disable non-working days in the `MiniCalendar`
+2. Show only the slots within the psychologist's working hours for the selected date
+
+The `AvailabilityEditor` component lets psychologists set their schedule when applying via `ApplyModal`. The schedule is stored alongside the draft application and becomes active once the profile is published by an admin.
+
+### Draft & publish workflow for psychologists
+
+```
+Psychologist fills ApplyModal
+        │
+        ▼
+POST /api/psychologists?status=draft
+        │
+        ▼
+Entry created as DRAFT (not visible to public)
+        │
+        ▼
+Admin reviews in Strapi admin panel
+        │
+   ┌────┴────┐
+Approve     Reject
+   │           │
+Publish     Delete
+   │
+   ▼
+Profile visible on /psychologists
+```
 
 ### `documentId` vs numeric `id`
 

@@ -83,19 +83,24 @@ Card displaying a psychologist's information.
 Full booking flow: date selection → time slot → patient details → submit.
 
 **Features:**
-- `MiniCalendar` for date selection (past days disabled)
-- Time slot grid — booked slots shown as disabled
+- `MiniCalendar` for date selection — past days and non-working days are disabled
+- Time slot grid — slots generated from the psychologist's `availability` schedule; already-booked slots shown as disabled with strikethrough
+- "No available slots on this day" message when the selected day has no slots
 - Form fields: name, phone, email, comment
-- On submit: calls `createAppointment()` and shows success message
+- On submit: calls `createAppointment()` and closes the modal
 
 **Props:**
 
 | Prop | Type | Description |
 |---|---|---|
-| `psychologist` | `object` | Psychologist being booked |
+| `psychologist` | `object` | Psychologist being booked (must include `availability`) |
 | `onClose` | `() => void` | Close the modal |
+| `onSuccess` | `() => void` | Optional callback after successful booking |
 
-**Slot availability:** On date change, fetches booked slots via `getBookedSlots(psychologistId, date, jwt)` and disables matching time buttons.
+**Slot logic:**
+1. `isWorkingDay(date, availability)` → disables non-working days in the calendar
+2. `generateSlots(date, availability)` → produces the list of time buttons for the selected date
+3. `getBookedSlots(psychologistId, date, jwt)` → fetches already-booked times and marks them disabled
 
 ---
 
@@ -108,6 +113,7 @@ Custom calendar component used inside `AppointmentModal`.
 **Features:**
 - Monday-first week layout
 - Past days are disabled and greyed out
+- Non-working days (per psychologist schedule) are disabled and shown with strikethrough
 - Selected day highlighted in orange (primary color)
 - Month navigation (prev/next)
 
@@ -115,8 +121,32 @@ Custom calendar component used inside `AppointmentModal`.
 
 | Prop | Type | Description |
 |---|---|---|
-| `value` | `string \| null` | Selected date as `"YYYY-MM-DD"` |
+| `selected` | `string \| null` | Selected date as `"YYYY-MM-DD"` |
 | `onChange` | `(date: string) => void` | Called when a day is clicked |
+| `isDisabledDay` | `(iso: string) => boolean` | Optional — disables specific dates (used for non-working days) |
+
+---
+
+## AvailabilityEditor
+
+**Path:** `src/components/AvailabilityEditor/AvailabilityEditor.jsx`
+
+Google Business-style weekly schedule editor. Used inside `ApplyModal`.
+
+**Features:**
+- 7 rows — one per day of the week
+- Toggle switch to enable/disable each day
+- Start and end time selectors (30-min steps, 06:00–22:00)
+- Session duration buttons: 30 min, 45 min, 1h, 1h30, 2h
+- Disabled days show "Closed" instead of time pickers
+- Changes are propagated immediately via `onChange`
+
+**Props:**
+
+| Prop | Type | Description |
+|---|---|---|
+| `value` | `object` | Current availability object (uses `DEFAULT_AVAILABILITY` if not set) |
+| `onChange` | `(availability: object) => void` | Called on every change |
 
 ---
 
@@ -126,10 +156,17 @@ Custom calendar component used inside `AppointmentModal`.
 
 Application form for psychologists who want to join the platform.
 
-**Features:**
-- Multi-field form (name, surname, specialization, license number, experience, price, consultation type, about, avatar)
-- On submit: calls `submitPsychologistApplication()` which creates a Strapi draft
-- Shows a success screen on completion
+**Sections:**
+1. Personal info (name, surname, photo URL)
+2. Professional details (specialization, experience, license, price, consultation type)
+3. Availability (AvailabilityEditor — sets working hours and session duration)
+4. About you (free text, min 50 characters)
+
+**On submit:**
+- Calls `submitPsychologistApplication()` which POSTs to `/api/psychologists?status=draft`
+- Entry is created as a **draft — not publicly visible**
+- Admin must review and **Publish** it in the Strapi admin panel
+- Shows success screen after submission
 
 **Props:**
 
@@ -137,9 +174,10 @@ Application form for psychologists who want to join the platform.
 |---|---|---|
 | `onClose` | `() => void` | Close the modal |
 
-**Note:** The form transforms the data before sending:
+**Data transformations before sending:**
 - `name` → `"Dr. {firstName} {lastName}"`
 - `license` → `"Licensed Psychologist ({number})"`
+- `availability` → full schedule object from `AvailabilityEditor`
 
 ---
 

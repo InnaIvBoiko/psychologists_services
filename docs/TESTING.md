@@ -35,6 +35,8 @@ Coverage report is written to `coverage/` and opened via `coverage/index.html`.
 src/
 ├── strapi/__tests__/
 │   └── strapi.test.js            # API client functions
+├── utils/__tests__/
+│   └── availability.test.js      # Slot generation logic (see below)
 ├── hooks/__tests__/
 │   └── useFavorites.test.js      # useFavorites custom hook
 ├── context/__tests__/
@@ -49,6 +51,21 @@ src/
 ---
 
 ## What is tested
+
+### `availability.test.js` — Slot generation utility
+
+Pure functions in `src/utils/availability.js` — no mocks needed.
+
+| Function | Cases to cover |
+|---|---|
+| `parseAvailability` | Returns defaults when `null`; parses JSON string; merges with defaults |
+| `isWorkingDay` | Returns `true` for enabled days, `false` for disabled days, `false` for Sundays (disabled by default) |
+| `generateSlots` | Correct slot list for Mon–Fri; empty array for disabled day; respects custom start/end/duration; returns `[]` when no date given |
+| `generateTimeOptions` | Returns options starting at `06:00`, ending at `22:00`, step 30 min |
+
+> This file is listed in the test tree but not yet created — it is a pure utility with no dependencies and is a good candidate for the next round of tests.
+
+---
 
 ### `strapi.test.js` — API client (16 tests)
 
@@ -104,6 +121,7 @@ Axios `post` and `getUserFavorites` are mocked.
 | Day headers | All 7 short day names rendered |
 | Past days | Days before today are `disabled` |
 | Today / future days | Not disabled |
+| Non-working days | `isDisabledDay` prop disables specific dates (strikethrough style) |
 | Day click | `onChange` called with `"YYYY-MM-DD"` ISO string |
 | Selected day | Button has `selected` CSS class |
 | Next month | Label updates to next month |
