@@ -32,8 +32,8 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
   useEffect(() => {
     if (!selectedDate) return
     setSelectedTime(null)
-    getBookedSlots(psychologist.id, selectedDate, token).then(setBookedSlots)
-  }, [psychologist.id, selectedDate, token])
+    getBookedSlots(psychologist.documentId, selectedDate, token).then(setBookedSlots)
+  }, [psychologist.documentId, selectedDate, token])
 
   const availableSlots = selectedDate ? generateSlots(selectedDate, availability) : []
 
@@ -64,7 +64,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
         email: form.email.trim(),
         time_slot: `${selectedDate} ${selectedTime}`,
         comment: form.comment.trim(),
-        psychologist_id: String(psychologist.id),
+        psychologist_id: psychologist.documentId,
         psychologist_name: psychologist.name
       }, token)
 
