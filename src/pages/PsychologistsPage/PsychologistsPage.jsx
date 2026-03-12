@@ -31,6 +31,7 @@ export default function PsychologistsPage() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const [dropOpen, setDropOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [toast, setToast] = useState(null)
@@ -44,12 +45,23 @@ export default function PsychologistsPage() {
     fetchData()
   }, [])
 
-  const filtered = applyFilter(data, filter)
+  const searched = search.trim()
+    ? data.filter((p) => {
+        const q = search.toLowerCase()
+        return (
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.surname || '').toLowerCase().includes(q) ||
+          (p.specialization || '').toLowerCase().includes(q)
+        )
+      })
+    : data
+
+  const filtered = applyFilter(searched, filter)
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
-  // Reset pagination on filter change
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [filter])
+  // Reset pagination on filter or search change
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [filter, search])
 
   const showToast = (msg) => {
     setToast(msg)
@@ -63,6 +75,18 @@ export default function PsychologistsPage() {
       <div className="container">
         <div className={styles.toolbar}>
           <h1 className={styles.pageTitle}>Psychologists</h1>
+          <div className={styles.searchWrap}>
+            <span className={styles.searchIcon}>🔍</span>
+            <input
+              className={styles.searchInput}
+              placeholder="Search by name or specialization…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className={styles.searchClear} onClick={() => setSearch('')}>✕</button>
+            )}
+          </div>
           <div className={styles.dropdown}>
             <button
               className={styles.dropTrigger}
