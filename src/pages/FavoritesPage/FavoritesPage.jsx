@@ -42,7 +42,9 @@ export default function FavoritesPage() {
         <h1 className={styles.pageTitle}>Favorites</h1>
 
         {loading ? (
-          <p className={styles.emptyState}>Loading your favorites...</p>
+          <div className={styles.loaderWrap}>
+            <div className={styles.spinner} />
+          </div>
         ) : favorites.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>💙</div>

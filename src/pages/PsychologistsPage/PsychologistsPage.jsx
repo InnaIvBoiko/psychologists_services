@@ -116,7 +116,9 @@ export default function PsychologistsPage() {
         </div>
 
         {loading ? (
-          <p className={styles.empty}>Loading psychologists from Strapi...</p>
+          <div className={styles.loaderWrap}>
+            <div className={styles.spinner} />
+          </div>
         ) : filtered.length === 0 ? (
           <p className={styles.empty}>No psychologists match this filter.</p>
         ) : (
