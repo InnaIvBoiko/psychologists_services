@@ -111,6 +111,54 @@ export const getUserAppointments = async (email, jwt) => {
   }
 };
 
+// Fetch past appointments (last 60 days) for review prompts
+export const getPastAppointmentsForReview = async (email, jwt) => {
+  if (!email || !jwt) return [];
+  try {
+    const response = await strapiApi.get(
+      `/appointments?filters[email][$eq]=${encodeURIComponent(email)}&fields[0]=time_slot&fields[1]=psychologist_name&fields[2]=psychologist_id&fields[3]=patient_name&pagination[pageSize]=50`,
+      { headers: { Authorization: `Bearer ${jwt}` } }
+    );
+    const now = new Date();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 60);
+    return response.data.data
+      .map((item) => ({
+        id: item.id,
+        time_slot: item.time_slot,
+        psychologist_name: item.psychologist_name,
+        psychologist_id: item.psychologist_id,
+        patient_name: item.patient_name,
+      }))
+      .filter((a) => {
+        if (!a.time_slot) return false;
+        const dt = new Date(a.time_slot.replace(' ', 'T'));
+        return dt < now && dt >= cutoff;
+      })
+      .sort((a, b) => b.time_slot.localeCompare(a.time_slot)); // most recent first
+  } catch (error) {
+    console.error("Error fetching past appointments:", error.response?.data || error.message);
+    return [];
+  }
+};
+
+// --- REVIEWS ---
+export const addReview = async (psychologistId, review, jwt) => {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (jwt) headers.Authorization = `Bearer ${jwt}`;
+    const response = await strapiApi.post(
+      `/psychologists/${psychologistId}/add-review`,
+      review,
+      { headers }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error adding review:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.error?.message || "Failed to submit review");
+  }
+};
+
 // --- PSYCHOLOGIST APPLICATION ---
 export const submitPsychologistApplication = async (data, jwt) => {
   try {

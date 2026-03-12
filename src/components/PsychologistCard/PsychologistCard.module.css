@@ -229,8 +229,15 @@
 
 .reviewStars {
   display: flex;
+  align-items: center;
   gap: 2px;
   font-size: 0.75rem;
+}
+
+.reviewDate {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-left: 6px;
 }
 
 .reviewText {

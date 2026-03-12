@@ -3,7 +3,12 @@ export default {
     {
       method: 'POST',
       path: '/psychologists/:id/toggle-favorite',
-      handler: 'psychologist.toggleFavorite', // refers to api::psychologist.psychologist.toggleFavorite
+      handler: 'psychologist.toggleFavorite',
+    },
+    {
+      method: 'POST',
+      path: '/psychologists/:id/add-review',
+      handler: 'psychologist.addReview',
     },
   ],
 };

@@ -67,5 +67,53 @@ export default factories.createCoreController('api::psychologist.psychologist', 
       console.error(err);
       return ctx.internalServerError("Errore durante l'aggiornamento dei preferiti");
     }
+  },
+
+  async addReview(ctx) {
+    try {
+      const { id } = ctx.params;
+      const { reviewer, rating, comment } = ctx.request.body as any;
+
+      if (!reviewer || !rating || !comment) {
+        return ctx.badRequest("reviewer, rating and comment are required.");
+      }
+
+      const psychologist = await strapi.entityService.findOne(
+        'api::psychologist.psychologist',
+        Number(id)
+      );
+
+      if (!psychologist) {
+        return ctx.notFound("Psychologist not found.");
+      }
+
+      let reviews = (psychologist as any).reviews || [];
+      if (typeof reviews === 'string') {
+        try { reviews = JSON.parse(reviews); } catch { reviews = []; }
+      }
+      if (!Array.isArray(reviews)) reviews = [];
+
+      const newReview = {
+        reviewer: String(reviewer).trim(),
+        rating: Math.min(5, Math.max(1, Number(rating))),
+        comment: String(comment).trim(),
+        date: new Date().toISOString().slice(0, 10),
+      };
+
+      const updatedReviews = [...reviews, newReview];
+      const avgRating = updatedReviews.reduce((s, r) => s + r.rating, 0) / updatedReviews.length;
+
+      await strapi.entityService.update('api::psychologist.psychologist', Number(id), {
+        data: {
+          reviews: updatedReviews,
+          rating: Math.round(avgRating * 10) / 10,
+        } as any,
+      });
+
+      return ctx.send({ success: true, review: newReview });
+    } catch (err) {
+      console.error(err);
+      return ctx.internalServerError("Error saving review.");
+    }
   }
 }));

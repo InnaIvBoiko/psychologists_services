@@ -135,6 +135,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
                                 ★
                               </span>
                             ))}
+                            {r.date && <span className={styles.reviewDate}>{r.date}</span>}
                           </div>
                         </div>
                       </div>
