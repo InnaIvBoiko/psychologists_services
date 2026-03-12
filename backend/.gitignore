@@ -1,0 +1,25 @@
+# Strapi ignorings
+.tmp/
+.cache/
+build/
+dist/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.development
+.env.test
+.env.production
+.env.local

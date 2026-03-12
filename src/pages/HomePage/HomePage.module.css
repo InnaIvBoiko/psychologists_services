@@ -1,0 +1,274 @@
+.page {
+  min-height: calc(100vh - 72px);
+}
+
+/* ===== Hero ===== */
+.hero {
+  background: linear-gradient(135deg, #edfbf4 0%, #f8f8f8 60%, #eef4ff 100%);
+  padding: 80px 0 100px;
+}
+
+.heroInner {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.heroContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  padding: 6px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.headline {
+  font-size: 3.2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--color-text-main);
+  letter-spacing: -0.02em;
+}
+
+.accent {
+  color: var(--color-primary);
+  position: relative;
+}
+
+.accent::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--color-primary);
+  border-radius: 2px;
+  opacity: 0.35;
+}
+
+.description {
+  font-size: 1.05rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  max-width: 480px;
+}
+
+.ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.stat span {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.statDivider {
+  width: 1px;
+  height: 36px;
+  background: var(--color-border);
+}
+
+/* Hero visual */
+.heroVisual {
+  flex: 0 0 380px;
+  position: relative;
+}
+
+.heroCard {
+  background: white;
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.heroCardTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heroAvatarWrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.heroAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.heroOnline {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-online);
+  border: 2px solid white;
+}
+
+.heroPsychLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.heroPsychName {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.heroRating {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.heroTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.heroBio {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.heroPrice {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.heroPrice strong {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Floating badges */
+.floatBadge1,
+.floatBadge2 {
+  position: absolute;
+  background: white;
+  border-radius: 16px;
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.floatBadge1 {
+  top: -18px;
+  right: -18px;
+  color: var(--color-primary-dark);
+}
+
+.floatBadge1 span { color: var(--color-primary); }
+
+.floatBadge2 {
+  bottom: -18px;
+  left: -18px;
+}
+
+/* ===== Features ===== */
+.features {
+  padding: 72px 0;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.featureCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.featureIcon {
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.featureCard h4 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.featureCard p {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  .heroInner { flex-direction: column; }
+  .heroVisual { flex: 0 0 auto; width: 100%; max-width: 400px; align-self: center; }
+  .headline { font-size: 2.3rem; }
+  .featureGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .headline { font-size: 1.9rem; }
+  .featureGrid { grid-template-columns: 1fr; }
+  .floatBadge1, .floatBadge2 { display: none; }
+}

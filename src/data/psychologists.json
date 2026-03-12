@@ -1,0 +1,377 @@
+[
+  {
+    "id": 1,
+    "name": "Dr. Sarah Davis",
+    "avatar": "https://randomuser.me/api/portraits/women/44.jpg",
+    "experience": 12,
+    "license": "Licensed Psychologist (License #67890)",
+    "specialization": "Depression and Mood Disorders",
+    "initial_consultation": "Free 45-minute initial consultation",
+    "about": "Dr. Sarah Davis is a highly experienced and licensed psychologist specializing in Depression and Mood Disorders. With 12 years of practice, she has helped numerous individuals overcome their depression and regain control of their lives. Dr. Davis is known for her empathetic and understanding approach to therapy, making her clients feel comfortable and supported throughout their journey to better mental health.",
+    "rating": 4.8,
+    "price_per_hour": 120,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Michael Brown",
+        "rating": 5,
+        "comment": "Dr. Davis completely changed how I handle anxiety. Her methods are gentle yet effective."
+      },
+      {
+        "reviewer": "Linda Johnson",
+        "rating": 4,
+        "comment": "Very professional and empathetic. I felt heard from the very first session."
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Dr. Mark Thompson",
+    "avatar": "https://randomuser.me/api/portraits/men/32.jpg",
+    "experience": 20,
+    "license": "Licensed Psychologist (License #54321)",
+    "specialization": "Relationship Counseling",
+    "initial_consultation": "Free 60-minute initial consultation",
+    "about": "Dr. Mark Thompson is a highly experienced and licensed psychologist specializing in Relationship Counseling. With 20 years of practice, he has helped individuals navigate and improve their relationships, leading to better well-being and personal growth. Dr. Thompson is known for his expertise and ability to provide invaluable insights to his clients. His approach to therapy is tailored to each individual's unique needs, ensuring a supportive and effective counseling experience.",
+    "rating": 4.7,
+    "price_per_hour": 180,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Anna Williams",
+        "rating": 5,
+        "comment": "Dr. Thompson helped save my marriage. Truly a gifted counselor."
+      },
+      {
+        "reviewer": "Robert Clark",
+        "rating": 4,
+        "comment": "His guidance brought clarity to the issues we were facing as a couple."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Dr. Lisa Anderson",
+    "avatar": "https://randomuser.me/api/portraits/women/68.jpg",
+    "experience": 18,
+    "license": "Licensed Psychologist (License #98765)",
+    "specialization": "Trauma and PTSD",
+    "initial_consultation": "Free 30-minute initial consultation",
+    "about": "Dr. Lisa Anderson is a highly experienced and licensed psychologist specializing in Trauma and PTSD. With 18 years of practice, she has been a beacon of support for individuals who have experienced trauma and its aftermath. Dr. Anderson is widely regarded for her exceptional insights and her ability to bring about life-changing transformations in her clients. Her approach is compassionate and tailored to each individual's unique needs, creating a safe and healing environment for those seeking her expertise.",
+    "rating": 4.9,
+    "price_per_hour": 160,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "James Miller",
+        "rating": 5,
+        "comment": "Dr. Anderson gave me the tools to process what happened to me. Life-changing experience."
+      },
+      {
+        "reviewer": "Sarah White",
+        "rating": 5,
+        "comment": "Extremely knowledgeable and compassionate. I highly recommend her."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Dr. Kevin Turner",
+    "avatar": "https://randomuser.me/api/portraits/men/51.jpg",
+    "experience": 8,
+    "license": "Licensed Psychologist (License #11234)",
+    "specialization": "Anxiety and Stress Management",
+    "initial_consultation": "Free 45-minute initial consultation",
+    "about": "Dr. Kevin Turner is a licensed psychologist with 8 years of experience helping clients manage anxiety and chronic stress. He uses an evidence-based blend of CBT and mindfulness to empower his clients with practical skills for day-to-day wellbeing.",
+    "rating": 4.6,
+    "price_per_hour": 100,
+    "popular": false,
+    "reviews": [
+      {
+        "reviewer": "Cynthia Moore",
+        "rating": 5,
+        "comment": "Kevin helped me break anxiety patterns I had for years. Incredible results."
+      },
+      {
+        "reviewer": "David Lee",
+        "rating": 4,
+        "comment": "Great communication style and very practical techniques."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Dr. Emily Rodriguez",
+    "avatar": "https://randomuser.me/api/portraits/women/21.jpg",
+    "experience": 15,
+    "license": "Licensed Psychologist (License #77654)",
+    "specialization": "Child and Adolescent Psychology",
+    "initial_consultation": "Free 60-minute initial consultation",
+    "about": "Dr. Emily Rodriguez is a licensed psychologist with 15 years of experience specializing in child and adolescent psychology. She works with young people dealing with behavioral issues, learning disabilities, family transitions, and emotional development challenges.",
+    "rating": 4.75,
+    "price_per_hour": 140,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Patricia Adams",
+        "rating": 5,
+        "comment": "Dr. Rodriguez worked wonders with my son. He is a different kid — happier and more confident."
+      },
+      {
+        "reviewer": "Thomas Green",
+        "rating": 5,
+        "comment": "She has a natural gift with children. Highly recommend."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Dr. Olivia Martinez",
+    "avatar": "https://randomuser.me/api/portraits/women/55.jpg",
+    "experience": 10,
+    "license": "Licensed Psychologist (License #33456)",
+    "specialization": "OCD and Compulsive Behaviors",
+    "initial_consultation": "Free 30-minute initial consultation",
+    "about": "Dr. Olivia Martinez specializes in OCD and related compulsive behaviors with 10 years of clinical experience. She uses Exposure and Response Prevention (ERP) therapy combined with ACT to help clients regain freedom from intrusive thoughts and rituals.",
+    "rating": 4.65,
+    "price_per_hour": 130,
+    "popular": false,
+    "reviews": [
+      {
+        "reviewer": "George Hall",
+        "rating": 5,
+        "comment": "ERP with Dr. Martinez changed my life. OCD no longer controls me."
+      },
+      {
+        "reviewer": "Nancy Lewis",
+        "rating": 4,
+        "comment": "Very structured approach. I learned so much about my patterns."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Dr. Chris Walker",
+    "avatar": "https://randomuser.me/api/portraits/men/73.jpg",
+    "experience": 6,
+    "license": "Licensed Psychologist (License #44567)",
+    "specialization": "Addiction and Recovery",
+    "initial_consultation": "Free 45-minute initial consultation",
+    "about": "Dr. Chris Walker is a licensed psychologist with 6 years of experience in addiction counseling and recovery support. He works with individuals overcoming substance use, behavioral addictions, and co-occurring mental health conditions in a non-judgmental environment.",
+    "rating": 4.5,
+    "price_per_hour": 90,
+    "popular": false,
+    "reviews": [
+      {
+        "reviewer": "Frank Harris",
+        "rating": 5,
+        "comment": "Chris helped me stay sober through one of the hardest years of my life."
+      },
+      {
+        "reviewer": "Karen Young",
+        "rating": 4,
+        "comment": "Supportive, non-judgmental, and genuinely caring."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Dr. Natalie Brooks",
+    "avatar": "https://randomuser.me/api/portraits/women/36.jpg",
+    "experience": 14,
+    "license": "Licensed Psychologist (License #55678)",
+    "specialization": "Grief and Bereavement",
+    "initial_consultation": "Free 60-minute initial consultation",
+    "about": "Dr. Natalie Brooks brings 14 years of compassionate experience in grief counseling and bereavement support. She helps individuals navigate the complex emotions of loss — through death, divorce, or major life transitions — while rebuilding meaning and resilience.",
+    "rating": 4.85,
+    "price_per_hour": 150,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Donna Wilson",
+        "rating": 5,
+        "comment": "After losing my mother, Dr. Brooks was a lifeline. I cannot thank her enough."
+      },
+      {
+        "reviewer": "Brian Scott",
+        "rating": 5,
+        "comment": "She has a rare depth of empathy that made the hardest conversations feel safe."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Dr. James Patel",
+    "avatar": "https://randomuser.me/api/portraits/men/19.jpg",
+    "experience": 22,
+    "license": "Licensed Psychologist (License #66789)",
+    "specialization": "Cognitive Behavioral Therapy",
+    "initial_consultation": "Free 30-minute initial consultation",
+    "about": "Dr. James Patel is a veteran CBT practitioner with 22 years of experience treating depression, anxiety, phobias, and personality disorders. His structured, goal-oriented approach has helped hundreds of clients achieve measurable improvements in their daily functioning.",
+    "rating": 4.9,
+    "price_per_hour": 200,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Laura Evans",
+        "rating": 5,
+        "comment": "The most insightful therapy I have ever experienced. Dr. Patel is exceptional."
+      },
+      {
+        "reviewer": "Steven King",
+        "rating": 5,
+        "comment": "Methodical and thoughtful. CBT with him made a real difference."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Dr. Rachel Kim",
+    "avatar": "https://randomuser.me/api/portraits/women/79.jpg",
+    "experience": 9,
+    "license": "Licensed Psychologist (License #77890)",
+    "specialization": "Eating Disorders",
+    "initial_consultation": "Free 45-minute initial consultation",
+    "about": "Dr. Rachel Kim specializes in eating disorders, body image issues, and disordered eating behaviors. With 9 years of clinical experience, she uses an integrative approach that addresses both the psychological and physical aspects of recovery in a compassionate, body-positive environment.",
+    "rating": 4.7,
+    "price_per_hour": 135,
+    "popular": false,
+    "reviews": [
+      {
+        "reviewer": "Megan Turner",
+        "rating": 5,
+        "comment": "Dr. Kim helped me rebuild my relationship with food and my body. Forever grateful."
+      },
+      {
+        "reviewer": "Ashley Carter",
+        "rating": 4,
+        "comment": "She is knowledgeable, kind, and never judgmental."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Dr. Samuel Wright",
+    "avatar": "https://randomuser.me/api/portraits/men/60.jpg",
+    "experience": 17,
+    "license": "Licensed Psychologist (License #88901)",
+    "specialization": "ADHD and Executive Function",
+    "initial_consultation": "Free 60-minute initial consultation",
+    "about": "Dr. Samuel Wright specializes in ADHD assessment and coaching with 17 years of experience. He works with both children and adults to improve executive function, focus, and organizational skills using a combination of behavioral strategies and psychoeducation.",
+    "rating": 4.6,
+    "price_per_hour": 145,
+    "popular": false,
+    "reviews": [
+      {
+        "reviewer": "Daniel Rivera",
+        "rating": 5,
+        "comment": "Finally understand my ADHD brain. Dr. Wright's strategies are practical and effective."
+      },
+      {
+        "reviewer": "Jessica Price",
+        "rating": 4,
+        "comment": "Great understanding of ADHD in adults. Very refreshing approach."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Dr. Maria Gonzalez",
+    "avatar": "https://randomuser.me/api/portraits/women/12.jpg",
+    "experience": 11,
+    "license": "Licensed Psychologist (License #99012)",
+    "specialization": "Couples Therapy",
+    "initial_consultation": "Free 30-minute initial consultation",
+    "about": "Dr. Maria Gonzalez is a licensed couples therapist with 11 years of experience. She helps partners improve communication, rebuild trust, and resolve conflicts using Emotionally Focused Therapy (EFT) and the Gottman Method — creating lasting positive change in relationships.",
+    "rating": 4.8,
+    "price_per_hour": 165,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Mark and Sandra Cooper",
+        "rating": 5,
+        "comment": "We were on the brink of divorce. Dr. Gonzalez helped us find our way back to each other."
+      },
+      {
+        "reviewer": "Victor Ruiz",
+        "rating": 5,
+        "comment": "Her skills in couples counseling are simply outstanding."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Dr. Aaron Nguyen",
+    "avatar": "https://randomuser.me/api/portraits/men/83.jpg",
+    "experience": 7,
+    "license": "Licensed Psychologist (License #10123)",
+    "specialization": "Sleep Disorders and Insomnia",
+    "initial_consultation": "Free 45-minute initial consultation",
+    "about": "Dr. Aaron Nguyen is a licensed psychologist with 7 years of focused experience in CBT for Insomnia (CBT-I) and other sleep disorders. He helps clients identify and change the thoughts and behaviors that prevent restful sleep, without relying on medication.",
+    "rating": 4.55,
+    "price_per_hour": 110,
+    "popular": false,
+    "reviews": [
+      {
+        "reviewer": "Christine Foster",
+        "rating": 5,
+        "comment": "I had not slept well in 3 years. After 8 sessions with Dr. Nguyen, I sleep through the night."
+      },
+      {
+        "reviewer": "Paul Mitchell",
+        "rating": 4,
+        "comment": "The CBT-I approach really works. Very structured and effective."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Dr. Sophia Chen",
+    "avatar": "https://randomuser.me/api/portraits/women/90.jpg",
+    "experience": 13,
+    "license": "Licensed Psychologist (License #21234)",
+    "specialization": "Mindfulness-Based Therapy",
+    "initial_consultation": "Free 60-minute initial consultation",
+    "about": "Dr. Sophia Chen integrates mindfulness and meditation practices with evidence-based psychotherapy. With 13 years of experience, she helps clients cultivate present-moment awareness, reduce reactivity, and develop a kinder relationship with themselves and their emotions.",
+    "rating": 4.75,
+    "price_per_hour": 125,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Alice Wong",
+        "rating": 5,
+        "comment": "Mindfulness practice with Dr. Chen completely shifted my perspective on life."
+      },
+      {
+        "reviewer": "Ryan Black",
+        "rating": 5,
+        "comment": "She creates such a calm, open space for healing. Truly transformative."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Dr. Benjamin Foster",
+    "avatar": "https://randomuser.me/api/portraits/men/40.jpg",
+    "experience": 25,
+    "license": "Licensed Psychologist (License #32345)",
+    "specialization": "Personality Disorders",
+    "initial_consultation": "Free 30-minute initial consultation",
+    "about": "Dr. Benjamin Foster is a senior psychologist with 25 years of expertise in Dialectical Behavior Therapy (DBT) for personality disorders, particularly borderline personality disorder (BPD). He is passionate about helping clients build lives worth living through skills training and validation-based therapy.",
+    "rating": 4.95,
+    "price_per_hour": 220,
+    "popular": true,
+    "reviews": [
+      {
+        "reviewer": "Emily Stone",
+        "rating": 5,
+        "comment": "Dr. Foster's DBT program literally saved my life. Cannot recommend him highly enough."
+      },
+      {
+        "reviewer": "Nathan Gray",
+        "rating": 5,
+        "comment": "25 years of wisdom shine through in every session. An absolute master of his field."
+      }
+    ]
+  }
+]

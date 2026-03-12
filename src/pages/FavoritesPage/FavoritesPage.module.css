@@ -1,0 +1,40 @@
+.page {
+  padding: 40px 0 80px;
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 28px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 80px 24px;
+}
+
+.emptyIcon {
+  font-size: 3.5rem;
+}
+
+.emptyState h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.emptyState p {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  max-width: 420px;
+  line-height: 1.7;
+}

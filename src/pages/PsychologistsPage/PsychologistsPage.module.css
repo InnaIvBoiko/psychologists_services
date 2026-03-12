@@ -1,0 +1,105 @@
+.page {
+  padding: 40px 0 80px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+/* Dropdown */
+.dropdown {
+  position: relative;
+}
+
+.dropTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-btn);
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background var(--transition);
+  min-width: 170px;
+  justify-content: space-between;
+}
+
+.dropTrigger:hover {
+  background: var(--color-primary-dark);
+}
+
+.dropArrow {
+  display: inline-block;
+  transition: transform var(--transition);
+}
+
+.dropArrow.open {
+  transform: rotate(180deg);
+}
+
+.dropMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-modal);
+  min-width: 200px;
+  padding: 8px;
+  list-style: none;
+  z-index: 200;
+  animation: fadeIn 0.15s ease;
+}
+
+.dropItem {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background var(--transition), color var(--transition);
+}
+
+.dropItem:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.dropItemActive {
+  background: var(--color-primary);
+  color: white !important;
+}
+
+/* Card list */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 60px 0;
+  font-size: 1rem;
+}
+
+/* Load more */
+.loadMoreWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
