@@ -43,7 +43,8 @@ src/
 │   └── AuthContext.test.jsx      # AuthContext provider
 └── components/
     ├── AppointmentModal/__tests__/
-    │   └── MiniCalendar.test.jsx  # Calendar component
+    │   ├── AppointmentModal.test.jsx  # Booking modal — auth notice, guest flow
+    │   └── MiniCalendar.test.jsx      # Calendar component
     └── Header/__tests__/
         └── NotificationBell.test.jsx  # Notification bell + review prompt
 ```
@@ -113,6 +114,28 @@ Axios `post` and `getUserFavorites` are mocked.
 | Login error | Promise rejects with the Strapi error message |
 | Successful register | `user` and `token` are set |
 | Logout | `user`, `token`, `favorites` are all cleared |
+
+---
+
+### `AppointmentModal.test.jsx` — Booking modal (9 tests)
+
+`useAuth`, `getBookedSlots`, `createAppointment`, `MiniCalendar`, and `AuthModal` are mocked.
+
+| Scenario | What is verified |
+|---|---|
+| Auth notice visible | Banner shown when user is not logged in |
+| Auth notice hidden | Banner not rendered when user is logged in |
+| Log In button | Opens `AuthModal` in `login` mode |
+| Register button | Opens `AuthModal` in `register` mode |
+| AuthModal closes | Banner returns after `onClose` is called on `AuthModal` |
+| "Send as a guest" | Submit button label when not logged in |
+| "Send" | Submit button label when logged in |
+| `getBookedSlots` with `documentId` | When date selected, first arg is `psychologist.documentId` (not numeric `id`) |
+| `createAppointment` with `documentId` | On submit, `psychologist_id` in payload equals `psychologist.documentId` |
+
+**Mocking strategy:**
+- `MiniCalendar` is replaced by a single button that fires `onChange('2025-06-16')` — removes calendar layout complexity from these tests
+- `AuthModal` is stubbed with a `data-testid` and `data-mode` attribute so mode can be asserted without rendering the real form
 
 ---
 

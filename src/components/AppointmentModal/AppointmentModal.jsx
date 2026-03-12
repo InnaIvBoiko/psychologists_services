@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { createAppointment, getBookedSlots } from '../../strapi/strapi.js'
 import { generateSlots, isWorkingDay } from '../../utils/availability.js'
 import Modal from '../Modal/Modal.jsx'
+import AuthModal from '../AuthModal/AuthModal.jsx'
 import MiniCalendar from './MiniCalendar.jsx'
 import styles from './AppointmentModal.module.css'
 
@@ -15,6 +16,7 @@ function formatDateLabel(iso) {
 
 export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
   const { user, token } = useAuth()
+  const [authModal, setAuthModal] = useState(null) // 'login' | 'register' | null
   const [form, setForm] = useState({
     name: user?.displayName || '',
     phone: '',
@@ -28,6 +30,17 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false)
 
   const availability = psychologist.availability ?? null
+
+  // Auto-fill name/email after login
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || user.displayName || '',
+        email: prev.email || user.email || '',
+      }))
+    }
+  }, [user])
 
   useEffect(() => {
     if (!selectedDate) return
@@ -79,6 +92,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
   }
 
   return (
+    <>
     <Modal onClose={onClose} title="Make an appointment">
       <div className={styles.content}>
         <h2 className={styles.title}>Make an appointment with&nbsp;a psychologist</h2>
@@ -88,6 +102,31 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
           form below to book your personal appointment with a professional psychologist.
           We guarantee confidentiality and respect for your privacy.
         </p>
+
+        {!user && (
+          <div className={styles.authNotice}>
+            <span className={styles.authNoticeText}>
+              Log in or register to track and cancel your appointment up to 24h before.
+            </span>
+            <div className={styles.authNoticeActions}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setAuthModal('login')}
+              >
+                Log In
+              </button>
+              <button
+                type="button"
+                  className="btn btn-primary"
+                  style={{ marginRight: '0px' }}
+                onClick={() => setAuthModal('register')}
+              >
+                Register
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className={styles.doctorRow}>
           <img
@@ -194,10 +233,19 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
             style={{ width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Sending…' : 'Send'}
+            {loading ? 'Sending…' : user ? 'Send' : 'Send as a guest'}
           </button>
         </form>
       </div>
     </Modal>
+
+    {authModal && (
+      <AuthModal
+        mode={authModal}
+        onClose={() => setAuthModal(null)}
+        onSwitchMode={(m) => setAuthModal(m)}
+      />
+    )}
+  </>
   )
 }

@@ -91,20 +91,23 @@ Full booking flow: date selection → time slot → patient details → submit.
 - Time slot grid — slots generated from the psychologist's `availability` schedule; already-booked slots shown as disabled with strikethrough
 - "No available slots on this day" message when the selected day has no slots
 - Form fields: name, phone, email, comment
-- On submit: calls `createAppointment()` and closes the modal
+- **Auth notice banner** (shown when not logged in) — prompts user to log in or register to be able to cancel appointments up to 24h before; clicking the buttons opens `AuthModal` inline without closing the booking form
+- After login inside the modal, name and email fields are auto-filled from the user's account (only if the fields are still empty)
+- Submit button label: **"Send"** when logged in, **"Send as a guest"** when not
+- On submit: calls `createAppointment()` with `psychologist_id = psychologist.documentId` and closes the modal
 
 **Props:**
 
 | Prop | Type | Description |
 |---|---|---|
-| `psychologist` | `object` | Psychologist being booked (must include `availability`) |
+| `psychologist` | `object` | Psychologist being booked (must include `availability` and `documentId`) |
 | `onClose` | `() => void` | Close the modal |
 | `onSuccess` | `() => void` | Optional callback after successful booking |
 
 **Slot logic:**
 1. `isWorkingDay(date, availability)` → disables non-working days in the calendar
 2. `generateSlots(date, availability)` → produces the list of time buttons for the selected date
-3. `getBookedSlots(psychologistId, date, jwt)` → fetches already-booked times and marks them disabled
+3. `getBookedSlots(psychologist.documentId, date, jwt)` → fetches already-booked times and marks them disabled; uses `documentId` (Strapi v5 stable identifier) so the filter matches what `createAppointment` stores
 
 ---
 

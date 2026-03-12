@@ -138,6 +138,29 @@
   color: var(--color-text-muted);
 }
 
+.authNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--color-primary-light);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-input);
+}
+
+.authNoticeText {
+  font-size: 0.83rem;
+  color: var(--color-primary-dark);
+  line-height: 1.5;
+}
+
+.authNoticeActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+}
+
 @media (max-width: 480px) {
   .topFields { grid-template-columns: 1fr; }
   .timeGrid { grid-template-columns: repeat(3, 1fr); }
