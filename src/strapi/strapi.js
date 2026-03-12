@@ -84,15 +84,19 @@ export const togglePsychologistFavorite = async (documentId, jwt) => {
 };
 
 // --- APPOINTMENTS ---
-export const getBookedSlots = async (psychologistId, jwt) => {
+// time_slot is stored as "YYYY-MM-DD HH:MM" — no extra date field needed in Strapi
+export const getBookedSlots = async (psychologistId, date, jwt) => {
+  if (!date) return [];
   try {
     const headers = jwt ? { Authorization: `Bearer ${jwt}` } : {};
     const response = await strapiApi.get(
-      `/appointments?filters[psychologist_id][$eq]=${psychologistId}&fields[0]=time_slot&pagination[pageSize]=100`,
+      `/appointments?filters[psychologist_id][$eq]=${psychologistId}&filters[time_slot][$contains]=${date}&fields[0]=time_slot&pagination[pageSize]=100`,
       { headers }
     );
-    console.log('[getBookedSlots] response:', response.data);
-    return response.data.data.map((item) => item.time_slot);
+    // Extract just the "HH:MM" part from "YYYY-MM-DD HH:MM"
+    return response.data.data
+      .map((item) => (item.time_slot || '').split(' ')[1])
+      .filter(Boolean);
   } catch (error) {
     console.error("Error fetching booked slots:", error.response?.data || error.message);
     return [];

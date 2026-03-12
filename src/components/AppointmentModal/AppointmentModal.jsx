@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { createAppointment, getBookedSlots } from '../../strapi/strapi.js'
 import Modal from '../Modal/Modal.jsx'
+import MiniCalendar from './MiniCalendar.jsx'
 import styles from './AppointmentModal.module.css'
 
 const TIME_SLOTS = [
@@ -12,22 +13,32 @@ const TIME_SLOTS = [
   '17:00', '17:30',
 ]
 
+function formatDateLabel(iso) {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-')
+  const date = new Date(Number(y), Number(m) - 1, Number(d))
+  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
   const { user, token } = useAuth()
-  const [form, setForm] = useState({ 
-    name: user?.displayName || '', 
-    phone: '', 
-    email: user?.email || '', 
-    comment: '' 
+  const [form, setForm] = useState({
+    name: user?.displayName || '',
+    phone: '',
+    email: user?.email || '',
+    comment: ''
   })
+  const [selectedDate, setSelectedDate] = useState(null)
   const [selectedTime, setSelectedTime] = useState(null)
   const [bookedSlots, setBookedSlots] = useState([])
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    getBookedSlots(psychologist.id, token).then(setBookedSlots)
-  }, [psychologist.id, token])
+    if (!selectedDate) return
+    setSelectedTime(null)
+    getBookedSlots(psychologist.id, selectedDate, token).then(setBookedSlots)
+  }, [psychologist.id, selectedDate, token])
 
   const set = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -38,6 +49,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
     if (!form.phone.trim()) errs.phone = 'Required'
     if (!form.email.trim()) errs.email = 'Required'
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email'
+    if (!selectedDate) errs.date = 'Please select a date'
     if (!selectedTime) errs.time = 'Please select a meeting time'
     return errs
   }
@@ -47,18 +59,18 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
-    
+
     try {
       await createAppointment({
         patient_name: form.name.trim(),
         phone: form.phone.trim(),
         email: form.email.trim(),
-        time_slot: selectedTime,
+        time_slot: `${selectedDate} ${selectedTime}`,
         comment: form.comment.trim(),
         psychologist_id: String(psychologist.id),
         psychologist_name: psychologist.name
       }, token)
-      
+
       onSuccess?.()
       onClose()
     } catch (error) {
@@ -127,26 +139,39 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
           </div>
 
           <div className="input-group">
+            <label className={styles.timeSectionLabel}>Date</label>
+            <MiniCalendar selected={selectedDate} onChange={setSelectedDate} />
+            {errors.date && <span className="input-error-msg">{errors.date}</span>}
+          </div>
+
+          <div className="input-group">
             <label className={styles.timeSectionLabel}>
               Meeting time
+              {selectedDate && (
+                <span className={styles.dateChip}>{formatDateLabel(selectedDate)}</span>
+              )}
             </label>
-            <div className={styles.timeGrid}>
-              {TIME_SLOTS.map((t) => {
-                const isBooked = bookedSlots.includes(t)
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    className={`${styles.timeSlot} ${selectedTime === t ? styles.selected : ''} ${isBooked ? styles.booked : ''}`}
-                    onClick={() => !isBooked && setSelectedTime(t)}
-                    disabled={isBooked}
-                    title={isBooked ? 'Already booked' : undefined}
-                  >
-                    {t}
-                  </button>
-                )
-              })}
-            </div>
+            {!selectedDate ? (
+              <p className={styles.selectDateHint}>Select a date first to see available slots</p>
+            ) : (
+              <div className={styles.timeGrid}>
+                {TIME_SLOTS.map((t) => {
+                  const isBooked = bookedSlots.includes(t)
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      className={`${styles.timeSlot} ${selectedTime === t ? styles.selected : ''} ${isBooked ? styles.booked : ''}`}
+                      onClick={() => !isBooked && setSelectedTime(t)}
+                      disabled={isBooked}
+                      title={isBooked ? 'Already booked' : undefined}
+                    >
+                      {t}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             {errors.time && <span className="input-error-msg">{errors.time}</span>}
           </div>
 
