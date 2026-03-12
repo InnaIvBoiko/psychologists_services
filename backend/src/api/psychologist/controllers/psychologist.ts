@@ -115,5 +115,37 @@ export default factories.createCoreController('api::psychologist.psychologist', 
       console.error(err);
       return ctx.internalServerError("Error saving review.");
     }
+  },
+
+  async dismissReview(ctx) {
+    try {
+      const userId = ctx.state.user?.id;
+      if (!userId) return ctx.unauthorized("Login required.");
+
+      const { appointmentId } = ctx.request.body as any;
+      if (!appointmentId) return ctx.badRequest("appointmentId is required.");
+
+      const fullUser = await strapi.entityService.findOne('plugin::users-permissions.user', userId);
+      if (!fullUser) return ctx.notFound("User not found.");
+
+      let dismissed = (fullUser as any).psy_dismissed_reviews || [];
+      if (typeof dismissed === 'string') {
+        try { dismissed = JSON.parse(dismissed); } catch { dismissed = []; }
+      }
+      if (!Array.isArray(dismissed)) dismissed = [];
+
+      const id = String(appointmentId);
+      if (!dismissed.includes(id)) {
+        dismissed = [...dismissed, id];
+        await strapi.entityService.update('plugin::users-permissions.user', userId, {
+          data: { psy_dismissed_reviews: dismissed } as any,
+        });
+      }
+
+      return ctx.send({ dismissed });
+    } catch (err) {
+      console.error(err);
+      return ctx.internalServerError("Error saving dismissed review.");
+    }
   }
 }));

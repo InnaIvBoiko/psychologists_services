@@ -22,6 +22,8 @@ export default function FavoritesPage() {
       setLoading(false)
     }
     fetchData()
+    window.addEventListener('psy:review-submitted', fetchData)
+    return () => window.removeEventListener('psy:review-submitted', fetchData)
   }, [])
 
   // Automatically recalculate favorites when getFavorites() changes (which depends on the reactive context)

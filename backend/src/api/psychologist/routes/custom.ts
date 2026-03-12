@@ -10,5 +10,10 @@ export default {
       path: '/psychologists/:id/add-review',
       handler: 'psychologist.addReview',
     },
+    {
+      method: 'POST',
+      path: '/users/dismiss-review',
+      handler: 'psychologist.dismissReview',
+    },
   ],
 };

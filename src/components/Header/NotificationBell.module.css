@@ -111,6 +111,40 @@
   text-align: center;
 }
 
+/* ── Cancellable appointment items ── */
+.cancellableItem {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.apptInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cancelBtn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fee2e2;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.cancelBtn:hover {
+  background: #dc2626;
+  color: white;
+}
+
 /* ── Review items ── */
 .reviewItem {
   flex-direction: row;

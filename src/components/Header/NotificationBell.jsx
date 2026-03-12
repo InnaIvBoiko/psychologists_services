@@ -1,26 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { getUserAppointments, getPastAppointmentsForReview } from '../../strapi/strapi.js'
+import {
+  getUserAppointments,
+  getPastAppointmentsForReview,
+  getDismissedReviews,
+  dismissAppointmentReview,
+  cancelAppointment,
+} from '../../strapi/strapi.js'
 import ReviewModal from '../ReviewModal/ReviewModal.jsx'
+import CancelModal from '../CancelModal/CancelModal.jsx'
 import styles from './NotificationBell.module.css'
 
-const DISMISSED_KEY = 'psy_dismissed_reviews'
-const REVIEWED_KEY  = 'psy_reviewed_appointments'
-
-function getDismissed() {
-  try { return JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]') } catch { return [] }
-}
-function getReviewed() {
-  try { return JSON.parse(localStorage.getItem(REVIEWED_KEY) || '[]') } catch { return [] }
-}
-function markDismissed(id) {
-  const list = getDismissed()
-  if (!list.includes(id)) localStorage.setItem(DISMISSED_KEY, JSON.stringify([...list, id]))
-}
-function markReviewed(id) {
-  const list = getReviewed()
-  if (!list.includes(id)) localStorage.setItem(REVIEWED_KEY, JSON.stringify([...list, id]))
-}
+const MS_24H = 24 * 60 * 60 * 1000
 
 function formatSlot(slot) {
   if (!slot) return { date: '', time: '' }
@@ -31,12 +22,20 @@ function formatSlot(slot) {
   return { date, time: timePart || '' }
 }
 
+function isCancellable(time_slot) {
+  if (!time_slot) return false
+  const dt = new Date(time_slot.replace(' ', 'T'))
+  return dt - Date.now() > MS_24H
+}
+
 export default function NotificationBell() {
   const { user, token } = useAuth()
   const [upcoming, setUpcoming] = useState([])
   const [pendingReviews, setPendingReviews] = useState([])
   const [open, setOpen] = useState(false)
   const [reviewTarget, setReviewTarget] = useState(null)
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [cancelling, setCancelling] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
@@ -45,16 +44,13 @@ export default function NotificationBell() {
       setPendingReviews([])
       return
     }
-
     getUserAppointments(user.email, token).then(setUpcoming)
 
-    getPastAppointmentsForReview(user.email, token).then((past) => {
-      const dismissed = getDismissed()
-      const reviewed  = getReviewed()
-      const pending = past.filter(
-        (a) => !dismissed.includes(a.id) && !reviewed.includes(a.id)
-      )
-      setPendingReviews(pending)
+    Promise.all([
+      getPastAppointmentsForReview(user.email, token),
+      getDismissedReviews(token),
+    ]).then(([past, dismissed]) => {
+      setPendingReviews(past.filter((a) => !dismissed.includes(String(a.id))))
     })
   }, [user, token])
 
@@ -71,14 +67,28 @@ export default function NotificationBell() {
   const totalCount = upcoming.length + pendingReviews.length
 
   function handleDismiss(id) {
-    markDismissed(id)
+    dismissAppointmentReview(id, token)
     setPendingReviews((prev) => prev.filter((a) => a.id !== id))
   }
 
   function handleReviewed(id) {
-    markReviewed(id)
+    dismissAppointmentReview(id, token)
     setPendingReviews((prev) => prev.filter((a) => a.id !== id))
     setReviewTarget(null)
+  }
+
+  async function handleCancelConfirm() {
+    if (!cancelTarget) return
+    setCancelling(true)
+    try {
+      await cancelAppointment(cancelTarget.documentId, token)
+      setUpcoming((prev) => prev.filter((a) => a.id !== cancelTarget.id))
+    } catch (err) {
+      console.error('Error cancelling appointment:', err)
+    } finally {
+      setCancelling(false)
+      setCancelTarget(null)
+    }
   }
 
   return (
@@ -108,11 +118,22 @@ export default function NotificationBell() {
               <ul className={styles.list}>
                 {upcoming.map((a) => {
                   const { date, time } = formatSlot(a.time_slot)
+                  const cancellable = isCancellable(a.time_slot)
                   return (
-                    <li key={a.id} className={styles.item}>
-                      <span className={styles.itemDoctor}>{a.psychologist_name}</span>
-                      <span className={styles.itemDate}>{date}</span>
-                      {time && <span className={styles.itemTime}>at {time}</span>}
+                    <li key={a.id} className={`${styles.item} ${cancellable ? styles.cancellableItem : ''}`}>
+                      <div className={styles.apptInfo}>
+                        <span className={styles.itemDoctor}>{a.psychologist_name}</span>
+                        <span className={styles.itemDate}>{date}{time ? ` at ${time}` : ''}</span>
+                      </div>
+                      {cancellable && (
+                        <button
+                          className={styles.cancelBtn}
+                          onClick={() => { setCancelTarget(a); setOpen(false) }}
+                          aria-label="Cancel appointment"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </li>
                   )
                 })}
@@ -162,6 +183,15 @@ export default function NotificationBell() {
           appointment={reviewTarget}
           onClose={() => setReviewTarget(null)}
           onSubmitted={handleReviewed}
+        />
+      )}
+
+      {cancelTarget && (
+        <CancelModal
+          appointment={cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={handleCancelConfirm}
+          loading={cancelling}
         />
       )}
     </>

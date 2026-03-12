@@ -68,6 +68,9 @@
     },
     "psy_favorites": {
       "type": "json"
+    },
+    "psy_dismissed_reviews": {
+      "type": "json"
     }
   }
 }

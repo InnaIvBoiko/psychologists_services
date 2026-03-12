@@ -27,10 +27,14 @@ Top-level navigation bar. Sticky, always visible.
 Bell icon in the header showing upcoming appointments.
 
 **Features:**
-- Badge with count of upcoming appointments (max display: `9+`)
-- Dropdown panel listing appointments (doctor name, date, time)
+- Badge with total count of upcoming appointments + pending reviews (max display: `9+`)
+- Dropdown has two sections:
+  - **Upcoming appointments** — doctor name, date, time; **Cancel** button shown if appointment is more than 24h away → opens `CancelModal`
+  - **Rate your sessions** — past appointments (last 60 days) not yet reviewed or dismissed
+- Each pending review has a **★ Review** button (opens `ReviewModal`) and a **✕** dismiss button
+- Dismissed reviews are saved to Strapi (`psy_dismissed_reviews` on user) and filtered on load
 - Closes on outside click
-- Fetches via `getUserAppointments(user.email, token)` on mount
+- Fetches via `getUserAppointments` + `getPastAppointmentsForReview` + `getDismissedReviews` on mount
 
 **Props:** none (reads from `useAuth()`)
 
@@ -181,11 +185,56 @@ Application form for psychologists who want to join the platform.
 
 ---
 
+## CancelModal
+
+**Path:** `src/components/CancelModal/CancelModal.jsx`
+
+Confirmation modal for cancelling an upcoming appointment.
+
+**Features:**
+- Shows doctor name and formatted appointment date
+- Two buttons: **Keep appointment** (close) and **Yes, cancel** (red, confirms cancellation)
+- Disabled while `loading` is true
+
+**Props:**
+
+| Prop | Type | Description |
+|---|---|---|
+| `appointment` | `object` | Appointment to cancel (`psychologist_name`, `time_slot`, `documentId`) |
+| `onClose` | `() => void` | Close without cancelling |
+| `onConfirm` | `() => void` | Called on confirmation — parent calls `cancelAppointment` and removes from list |
+| `loading` | `boolean` | Disables buttons while the DELETE request is in flight |
+
+---
+
+## ReviewModal
+
+**Path:** `src/components/ReviewModal/ReviewModal.jsx`
+
+Modal for leaving a review after a completed appointment.
+
+**Features:**
+- Pre-filled "Your name" field from `appointment.patient_name` (editable)
+- Interactive 5-star rating with hover effect and label (Poor → Excellent)
+- Comment textarea
+- On submit: calls `addReview(psychologist_id, { reviewer, rating, comment }, token)`
+- On success: calls `onSubmitted(appointment.id)` → removes item from notification bell
+
+**Props:**
+
+| Prop | Type | Description |
+|---|---|---|
+| `appointment` | `object` | Past appointment (`id`, `psychologist_id`, `psychologist_name`, `patient_name`) |
+| `onClose` | `() => void` | Close the modal |
+| `onSubmitted` | `(id) => void` | Called after successful submission |
+
+---
+
 ## Modal (base wrapper)
 
 **Path:** `src/components/Modal/Modal.jsx`
 
-Base modal overlay used by `AuthModal`, `AppointmentModal`, and `ApplyModal`.
+Base modal overlay used by `AuthModal`, `AppointmentModal`, `ApplyModal`, and `ReviewModal`.
 
 **Features:**
 - Dark overlay backdrop

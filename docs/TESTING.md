@@ -45,7 +45,7 @@ src/
     ├── AppointmentModal/__tests__/
     │   └── MiniCalendar.test.jsx  # Calendar component
     └── Header/__tests__/
-        └── NotificationBell.test.jsx  # Notification bell component
+        └── NotificationBell.test.jsx  # Notification bell + review prompt
 ```
 
 ---
@@ -78,7 +78,12 @@ Tests for all functions in `src/strapi/strapi.js`. Axios is mocked — no real H
 | `getUserFavorites` | Returns array, handles missing field, parses JSON string, skips call when no JWT |
 | `getBookedSlots` | Extracts HH:MM from time_slot, guards against missing date, filters empty entries, empty array on error |
 | `getUserAppointments` | Filters out past dates, sorts by time_slot, guards against missing email/token |
+| `getPastAppointmentsForReview` | Filters to last 60 days, includes patient_name, returns empty array on error |
 | `createAppointment` | Wraps payload in `data`, passes JWT header, throws readable error message on failure |
+| `addReview` | POSTs to `/psychologists/:id/add-review`, passes JWT header, throws on error |
+| `getDismissedReviews` | Reads `psy_dismissed_reviews` from `/users/me`, parses JSON string, returns `[]` on error |
+| `dismissAppointmentReview` | POSTs to `/users/dismiss-review`, no-op when no JWT |
+| `cancelAppointment` | DELETEs `/appointments/:documentId` with JWT header |
 
 > **Note on `id` vs `documentId`:** Strapi v5 returns both a numeric `id` and a string `documentId`. The mapping code does `{ id: item.documentId, strapiId: String(item.id), ...item }` — because `...item` is spread last, it overwrites the `id` shortcut with the numeric value. The `documentId` string is accessible via `result.documentId`. Tests reflect this actual behavior.
 
@@ -131,18 +136,26 @@ Axios `post` and `getUserFavorites` are mocked.
 
 ---
 
-### `NotificationBell.test.jsx` — Notification bell (8 tests)
+### `NotificationBell.test.jsx` — Notification bell + review prompt + cancel (16 tests)
 
-`useAuth` and `getUserAppointments` are mocked.
+`useAuth`, `getUserAppointments`, `getPastAppointmentsForReview`, `getDismissedReviews`, `dismissAppointmentReview`, `cancelAppointment` are mocked. `ReviewModal` and `CancelModal` are stubbed with minimal test elements.
 
 | Scenario | What is verified |
 |---|---|
 | Bell renders | Button with accessible label is present |
-| No badge | No number shown when appointments list is empty |
-| Badge count | Shows correct count (e.g. `2`) |
-| Badge overflow | Shows `9+` when more than 9 appointments |
+| No badge | No number shown when no appointments and no pending reviews |
+| Badge count (upcoming) | Shows correct count from upcoming appointments |
+| Badge count (combined) | Badge = upcoming + pending reviews |
+| Badge overflow | Shows `9+` when total count exceeds 9 |
 | Opens dropdown | Dropdown header visible after click |
-| Appointment list | Doctor names shown in dropdown |
+| Appointment list | Doctor names shown in upcoming section |
+| Cancel button visible | Shown for appointments > 24h away |
+| Cancel button hidden | NOT shown for appointments within 24h |
+| Cancel opens modal | Clicking Cancel button renders `CancelModal` |
+| Cancel confirmed | Calls `cancelAppointment(documentId, token)` and removes from list |
+| Rate your sessions | Section shown when there are pending reviews |
+| Dismiss | Removes review from list |
+| Review button | Opens `ReviewModal` |
 | Empty state | "No upcoming appointments" message shown |
 | Toggle close | Second click hides the dropdown |
 | No user | Component returns null |
@@ -177,6 +190,10 @@ A plain object (`mockAuth`) is mutated between tests to simulate different auth 
 ```js
 vi.mock('../../strapi/strapi.js', () => ({
   getUserAppointments: (...args) => mockGetUserAppointments(...args),
+  getPastAppointmentsForReview: (...args) => mockGetPastAppointmentsForReview(...args),
+  getDismissedReviews: (...args) => mockGetDismissedReviews(...args),
+  dismissAppointmentReview: (...args) => mockDismissAppointmentReview(...args),
+  cancelAppointment: (...args) => mockCancelAppointment(...args),
 }))
 ```
 

@@ -96,6 +96,7 @@ export const getUserAppointments = async (email, jwt) => {
     return response.data.data
       .map((item) => ({
         id: item.id,
+        documentId: item.documentId,
         time_slot: item.time_slot,
         psychologist_name: item.psychologist_name,
       }))
@@ -156,6 +157,42 @@ export const addReview = async (psychologistId, review, jwt) => {
   } catch (error) {
     console.error("Error adding review:", error.response?.data || error.message);
     throw new Error(error.response?.data?.error?.message || "Failed to submit review");
+  }
+};
+
+export const cancelAppointment = async (documentId, jwt) => {
+  await strapiApi.delete(`/appointments/${documentId}`, {
+    headers: { Authorization: `Bearer ${jwt}` }
+  });
+};
+
+export const getDismissedReviews = async (jwt) => {
+  if (!jwt) return [];
+  try {
+    const response = await strapiApi.get('/users/me', {
+      headers: { Authorization: `Bearer ${jwt}` }
+    });
+    let dismissed = response.data.psy_dismissed_reviews || [];
+    if (typeof dismissed === 'string') {
+      try { dismissed = JSON.parse(dismissed); } catch { dismissed = []; }
+    }
+    return Array.isArray(dismissed) ? dismissed : [];
+  } catch (error) {
+    console.error("Error fetching dismissed reviews:", error);
+    return [];
+  }
+};
+
+export const dismissAppointmentReview = async (appointmentId, jwt) => {
+  if (!jwt) return;
+  try {
+    await strapiApi.post(
+      '/users/dismiss-review',
+      { appointmentId: String(appointmentId) },
+      { headers: { Authorization: `Bearer ${jwt}` } }
+    );
+  } catch (error) {
+    console.error("Error dismissing review:", error.response?.data || error.message);
   }
 };
 

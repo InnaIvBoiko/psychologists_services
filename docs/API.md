@@ -119,6 +119,41 @@ No body required.
 
 ---
 
+### Add review *(auth required)*
+
+```
+POST /api/psychologists/:strapiId/add-review
+```
+
+> `:strapiId` is the numeric internal `id` (not `documentId`).
+> Requires the `addReview` action to be enabled for the **Authenticated** role in Strapi admin → Settings → Users & Permissions → Roles.
+
+**Body**
+```json
+{
+  "reviewer": "Jane Doe",
+  "rating": 5,
+  "comment": "Excellent therapist, highly recommend."
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "review": {
+    "reviewer": "Jane Doe",
+    "rating": 5,
+    "comment": "Excellent therapist, highly recommend.",
+    "date": "2025-06-15"
+  }
+}
+```
+
+The backend appends the review to the psychologist's `reviews` JSON array and recalculates the average `rating`.
+
+---
+
 ### Submit application (draft)
 
 ```
@@ -206,6 +241,54 @@ GET /api/appointments
 ```
 
 The frontend filters out past appointments client-side.
+
+---
+
+### Get past appointments for review *(auth required)*
+
+```
+GET /api/appointments
+  ?filters[email][$eq]=<user_email>
+  &fields[0]=time_slot
+  &fields[1]=psychologist_name
+  &fields[2]=psychologist_id
+  &fields[3]=patient_name
+  &pagination[pageSize]=50
+```
+
+Used by the notification bell to find sessions that can be reviewed. The frontend filters to appointments in the past 60 days and excludes any already reviewed or dismissed (tracked in `localStorage`).
+
+---
+
+### Cancel appointment *(auth required)*
+
+```
+DELETE /api/appointments/:documentId
+```
+
+> Requires the `delete` action to be enabled for the **Authenticated** role in Strapi admin → Settings → Users & Permissions → Roles → Appointment.
+
+The frontend only shows the Cancel button if the appointment is more than **24 hours** in the future. Cancellation is permanent.
+
+---
+
+### Dismiss review prompt *(auth required)*
+
+```
+POST /api/users/dismiss-review
+```
+
+**Body**
+```json
+{ "appointmentId": "42" }
+```
+
+Appends the appointment ID to the authenticated user's `psy_dismissed_reviews` JSON array. The review prompt for that appointment will no longer appear in the notification bell.
+
+**Response**
+```json
+{ "dismissed": ["42"] }
+```
 
 ---
 

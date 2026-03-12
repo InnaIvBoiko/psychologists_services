@@ -43,6 +43,8 @@ export default function PsychologistsPage() {
       setLoading(false)
     }
     fetchData()
+    window.addEventListener('psy:review-submitted', fetchData)
+    return () => window.removeEventListener('psy:review-submitted', fetchData)
   }, [])
 
   const searched = search.trim()

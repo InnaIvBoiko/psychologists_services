@@ -32,6 +32,7 @@ export default function ReviewModal({ appointment, onClose, onSubmitted }) {
         },
         token
       )
+      window.dispatchEvent(new CustomEvent('psy:review-submitted'))
       onSubmitted?.(appointment.id)
       onClose()
     } catch (err) {
