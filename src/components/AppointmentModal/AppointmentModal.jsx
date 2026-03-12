@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { createAppointment } from '../../strapi/strapi.js'
+import { createAppointment, getBookedSlots } from '../../strapi/strapi.js'
 import Modal from '../Modal/Modal.jsx'
 import styles from './AppointmentModal.module.css'
 
@@ -21,8 +21,13 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
     comment: '' 
   })
   const [selectedTime, setSelectedTime] = useState(null)
+  const [bookedSlots, setBookedSlots] = useState([])
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    getBookedSlots(psychologist.id, token).then(setBookedSlots)
+  }, [psychologist.id, token])
 
   const set = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -126,16 +131,21 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
               Meeting time
             </label>
             <div className={styles.timeGrid}>
-              {TIME_SLOTS.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={`${styles.timeSlot} ${selectedTime === t ? styles.selected : ''}`}
-                  onClick={() => setSelectedTime(t)}
-                >
-                  {t}
-                </button>
-              ))}
+              {TIME_SLOTS.map((t) => {
+                const isBooked = bookedSlots.includes(t)
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`${styles.timeSlot} ${selectedTime === t ? styles.selected : ''} ${isBooked ? styles.booked : ''}`}
+                    onClick={() => !isBooked && setSelectedTime(t)}
+                    disabled={isBooked}
+                    title={isBooked ? 'Already booked' : undefined}
+                  >
+                    {t}
+                  </button>
+                )
+              })}
             </div>
             {errors.time && <span className="input-error-msg">{errors.time}</span>}
           </div>

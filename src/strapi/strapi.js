@@ -84,6 +84,21 @@ export const togglePsychologistFavorite = async (documentId, jwt) => {
 };
 
 // --- APPOINTMENTS ---
+export const getBookedSlots = async (psychologistId, jwt) => {
+  try {
+    const headers = jwt ? { Authorization: `Bearer ${jwt}` } : {};
+    const response = await strapiApi.get(
+      `/appointments?filters[psychologist_id][$eq]=${psychologistId}&fields[0]=time_slot&pagination[pageSize]=100`,
+      { headers }
+    );
+    console.log('[getBookedSlots] response:', response.data);
+    return response.data.data.map((item) => item.time_slot);
+  } catch (error) {
+    console.error("Error fetching booked slots:", error.response?.data || error.message);
+    return [];
+  }
+};
+
 export const createAppointment = async (appointmentData, jwt) => {
   try {
     const headers = { 'Content-Type': 'application/json' };
