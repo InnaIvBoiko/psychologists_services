@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import AuthModal from '../AuthModal/AuthModal.jsx'
+import NotificationBell from './NotificationBell.jsx'
 import styles from './Header.module.css'
 
 export default function Header() {
@@ -55,6 +56,7 @@ export default function Header() {
           <div className={styles.actions}>
             {user ? (
               <>
+                <NotificationBell />
                 <div className={styles.userInfo}>
                   <div className={styles.avatar}>
                     {user.displayName ? user.displayName[0].toUpperCase() : '?'}

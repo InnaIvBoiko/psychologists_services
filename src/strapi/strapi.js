@@ -83,6 +83,34 @@ export const togglePsychologistFavorite = async (documentId, jwt) => {
   }
 };
 
+// --- USER APPOINTMENTS ---
+export const getUserAppointments = async (email, jwt) => {
+  if (!email || !jwt) return [];
+  try {
+    const response = await strapiApi.get(
+      `/appointments?filters[email][$eq]=${encodeURIComponent(email)}&fields[0]=time_slot&fields[1]=psychologist_name&pagination[pageSize]=50`,
+      { headers: { Authorization: `Bearer ${jwt}` } }
+    );
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return response.data.data
+      .map((item) => ({
+        id: item.id,
+        time_slot: item.time_slot,
+        psychologist_name: item.psychologist_name,
+      }))
+      .filter((a) => {
+        if (!a.time_slot) return false;
+        const [datePart] = a.time_slot.split(' ');
+        return new Date(datePart) >= today;
+      })
+      .sort((a, b) => a.time_slot.localeCompare(b.time_slot));
+  } catch (error) {
+    console.error("Error fetching user appointments:", error.response?.data || error.message);
+    return [];
+  }
+};
+
 // --- PSYCHOLOGIST APPLICATION ---
 export const submitPsychologistApplication = async (data, jwt) => {
   try {
