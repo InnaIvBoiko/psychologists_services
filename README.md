@@ -263,6 +263,7 @@ Detailed docs are in the [`/docs`](./docs) folder:
 - [Component Reference](./docs/COMPONENTS.md) — props and behaviour of every component
 - [Deployment Guide](./docs/DEPLOYMENT.md) — Vercel + Strapi Cloud setup step by step
 - [Security](./docs/SECURITY.md) — auth model, env vars, CORS, known limitations
+- [Testing](./docs/TESTING.md) — test stack, how to run, what is covered
 
 ---
 
