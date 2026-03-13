@@ -180,3 +180,11 @@
   .timeSelect { min-width: 60px; font-size: 0.78rem; }
   .dayRow { gap: 10px; padding: 10px 12px; }
 }
+
+@media (max-width: 360px) {
+  .dayRow { flex-wrap: wrap; gap: 6px 10px; }
+  .dayName { flex: 1; width: auto; }
+  .times { width: 100%; padding-left: 46px; }
+  .closedLabel { padding-left: 46px; }
+  .durationRow { flex-direction: column; align-items: flex-start; gap: 10px; }
+}

@@ -165,3 +165,8 @@
   .topFields { grid-template-columns: 1fr; }
   .timeGrid { grid-template-columns: repeat(3, 1fr); }
 }
+
+@media (max-width: 360px) {
+  .timeGrid { grid-template-columns: repeat(2, 1fr); }
+  .authNoticeActions { flex-direction: column; align-items: stretch; }
+}

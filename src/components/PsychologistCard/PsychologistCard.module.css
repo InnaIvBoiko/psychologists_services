@@ -251,6 +251,17 @@
   .card {
     flex-direction: column;
     gap: 16px;
+    padding: 18px 16px;
+  }
+
+  .avatarWrap {
+    width: 96px;
+    height: 96px;
+  }
+
+  .avatar {
+    width: 76px;
+    height: 76px;
   }
 
   .topRow {
@@ -260,5 +271,20 @@
 
   .metaRight {
     flex-wrap: wrap;
+    flex-shrink: 1;
+  }
+
+  .tags {
+    gap: 6px;
+  }
+
+  /* Allow tags to wrap text so they don't overflow the card */
+  .tags :global(.tag) {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .reviewText {
+    padding-left: 0;
   }
 }

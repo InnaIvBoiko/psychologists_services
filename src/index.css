@@ -108,6 +108,12 @@ h4 {
   padding: 0 24px;
 }
 
+@media (max-width: 350px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+
 /* ===========================
    Buttons
    =========================== */

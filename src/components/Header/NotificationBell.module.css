@@ -53,6 +53,17 @@
   animation: fadeIn 0.15s ease;
 }
 
+@media (max-width: 500px) {
+  .dropdown {
+    position: fixed;
+    top: 72px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    border-radius: 12px;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
