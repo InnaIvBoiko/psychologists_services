@@ -229,7 +229,7 @@ All requests go through `src/strapi/strapi.js`.
 | availability | JSON | Weekly schedule per day |
 | user_email | Email | Links profile to the user account that created it |
 
-> **Setup required:** The `user_email` field must be added via Strapi admin → Content-Type Builder → Psychologist → Add field (type: Email, name: `user_email`).
+> The `user_email` field is defined in `backend/src/api/psychologist/content-types/psychologist/schema.json` and is created automatically when the backend starts.
 
 Draft & Publish enabled — new applications submitted via the form are saved as **drafts** until an admin publishes them.
 

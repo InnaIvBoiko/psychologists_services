@@ -66,6 +66,9 @@
     },
     "availability": {
       "type": "json"
+    },
+    "user_email": {
+      "type": "email"
     }
   }
 }
