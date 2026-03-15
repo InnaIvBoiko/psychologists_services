@@ -16,8 +16,10 @@ A full-stack web application to browse and book sessions with licensed psycholog
 - **Psychologist Working Hours** — Each psychologist defines their own schedule (days, hours, session duration); slots are generated dynamically from that schedule
 - **Authentication** — Register and log in via Strapi Users & Permissions (JWT)
 - **Notification Bell** — View upcoming appointments directly in the header
-- **Apply as Psychologist** — Submit a professional application including availability schedule; saved as **draft** pending admin approval before it becomes publicly visible
+- **Apply as Psychologist** — Submit a professional application including availability schedule; an account is created automatically if the applicant is not yet registered; saved as **draft** pending admin approval
 - **404 Page** — Custom not-found page
+- **Privacy & GDPR** — Cookie consent banner, Privacy Policy page (`/privacy`), consent checkboxes on registration and application forms
+- **Right to Erasure** — Logged-in users can permanently delete their account and all associated data via the user menu
 
 ---
 
@@ -40,6 +42,13 @@ A full-stack web application to browse and book sessions with licensed psycholog
 | SQLite | (local dev) |
 | Node.js | ≥20 ≤24 |
 
+### Infrastructure
+| Service | Purpose |
+|---|---|
+| Vercel | Frontend hosting + SPA routing |
+| Strapi Cloud | Backend hosting + managed PostgreSQL |
+| UptimeRobot | Uptime monitoring — keeps Strapi Cloud awake on the free tier |
+
 ---
 
 ## Project Structure
@@ -48,34 +57,41 @@ A full-stack web application to browse and book sessions with licensed psycholog
 psychologists_services/
 ├── backend/                    # Strapi CMS
 │   ├── src/
+│   │   ├── index.ts            # Custom routes (delete-account endpoint)
 │   │   ├── api/
 │   │   │   ├── appointment/    # Appointment content type
 │   │   │   └── psychologist/   # Psychologist content type + custom routes
-│   │   └── extensions/         # Users & Permissions extension
-│   ├── config/                 # Strapi configuration
+│   │   └── extensions/         # Users & Permissions extension (psy_favorites, psy_dismissed_reviews)
+│   ├── config/
+│   │   ├── middlewares.ts      # CORS configuration
+│   │   └── server.ts           # Host/port config
 │   └── .env.example
 ├── src/                        # React frontend
 │   ├── components/
 │   │   ├── AppointmentModal/   # Booking modal with calendar
-│   │   ├── ApplyModal/         # Psychologist application form
+│   │   ├── ApplyModal/         # Psychologist application form (auto-creates user account)
 │   │   ├── AuthModal/          # Login / Register modal
-│   │   ├── Header/             # Header + NotificationBell
+│   │   ├── CookieBanner/       # GDPR cookie consent banner
+│   │   ├── DeleteAccountModal/ # Account deletion confirmation modal
+│   │   ├── Header/             # Header + NotificationBell + user dropdown
 │   │   ├── Modal/              # Base modal wrapper
 │   │   └── PsychologistCard/   # Card with expand/book/favorite
 │   ├── context/
-│   │   └── AuthContext.jsx     # Auth state (user, token, login, logout)
+│   │   └── AuthContext.jsx     # Auth state (user, token, login, logout, deleteAccount)
 │   ├── hooks/
 │   │   └── useFavorites.js     # Favorites logic
 │   ├── pages/
 │   │   ├── HomePage/
 │   │   ├── PsychologistsPage/
 │   │   ├── FavoritesPage/
+│   │   ├── PrivacyPage/        # Privacy Policy (/privacy)
 │   │   └── NotFoundPage/
 │   ├── strapi/
 │   │   └── strapi.js           # All API calls
 │   └── data/
 │       └── psychologists.json  # Seed data
 ├── seed.js                     # Data seeding script
+├── vercel.json                 # Build config + SPA rewrite
 ├── .env.example
 └── package.json
 ```
@@ -140,7 +156,7 @@ This imports all psychologists from `src/data/psychologists.json` into Strapi.
 VITE_STRAPI_URL=http://localhost:1337
 ```
 
-For production (Vercel), add this in **Settings → Environment Variables**.
+> On Vercel, add this in **Settings → Environment Variables** and redeploy. Vite bakes env vars at build time — the variable is not read at runtime.
 
 ### Backend (`backend/.env`)
 
@@ -178,12 +194,16 @@ All requests go through `src/strapi/strapi.js`.
 |---|---|---|
 | `getPsychologists()` | GET | `/api/psychologists` |
 | `getPsychologistById(id)` | GET | `/api/psychologists/:id` |
+| `checkIsUserPsychologist(email)` | GET | `/api/psychologists?filters[user_email][$eq]=...` |
 | `togglePsychologistFavorite(id, jwt)` | POST | `/api/psychologists/:id/toggle-favorite` |
+| `addReview(id, review, jwt)` | POST | `/api/psychologists/:id/add-review` |
 | `getUserFavorites(jwt)` | GET | `/api/users/me` |
 | `getBookedSlots(psychId, date, jwt)` | GET | `/api/appointments?filters...` |
 | `createAppointment(data, jwt)` | POST | `/api/appointments` |
 | `getUserAppointments(email, jwt)` | GET | `/api/appointments?filters...` |
+| `cancelAppointment(documentId, jwt)` | DELETE | `/api/appointments/:id` |
 | `submitPsychologistApplication(data, jwt)` | POST | `/api/psychologists?status=draft` |
+| `deleteAccount(jwt)` | DELETE | `/api/users/me/delete-account` |
 
 ---
 
@@ -204,11 +224,14 @@ All requests go through `src/strapi/strapi.js`.
 | initial_consultation | String | Free / paid |
 | about | Text | |
 | reviews | JSON | Array of review objects |
-| image | Media | Profile photo |
 | popular | Boolean | |
 | isAvailable | Boolean | |
+| availability | JSON | Weekly schedule per day |
+| user_email | Email | Links profile to the user account that created it |
 
-Draft & Publish enabled — new applications via the form are saved as **drafts** until an admin reviews and publishes them.
+> **Setup required:** The `user_email` field must be added via Strapi admin → Content-Type Builder → Psychologist → Add field (type: Email, name: `user_email`).
+
+Draft & Publish enabled — new applications submitted via the form are saved as **drafts** until an admin publishes them.
 
 ### Appointment
 
@@ -222,7 +245,16 @@ Draft & Publish enabled — new applications via the form are saved as **drafts*
 | psychologist_name | String | Denormalized |
 | comment | Text | Optional |
 
-> **Note:** The `time_slot` field stores both date and time as a single string (`"2025-06-15 14:00"`). This design was chosen because Strapi Cloud does not allow schema changes in production. Date filtering uses the `$contains` operator.
+> **Note:** `time_slot` stores both date and time as a single string. Date filtering uses the `$contains` operator.
+
+### User (extended)
+
+Standard Strapi users-permissions user with two additional JSON fields:
+
+| Field | Type | Notes |
+|---|---|---|
+| psy_favorites | JSON | Array of psychologist documentIds |
+| psy_dismissed_reviews | JSON | Array of appointment ids the user dismissed review prompts for |
 
 ---
 
@@ -232,8 +264,8 @@ Draft & Publish enabled — new applications via the form are saved as **drafts*
 
 1. Push to GitHub
 2. Import the repository in [Vercel](https://vercel.com)
-3. Set the environment variable: `VITE_STRAPI_URL=https://your-strapi-app.strapiapp.com`
-4. Deploy
+3. Add environment variable: `VITE_STRAPI_URL=https://your-strapi-app.strapiapp.com`
+4. Deploy — `vercel.json` handles SPA routing and build config automatically
 
 ### Backend — Strapi Cloud
 
@@ -241,6 +273,27 @@ Draft & Publish enabled — new applications via the form are saved as **drafts*
 2. Set the root directory to `backend`
 3. Configure environment variables (database, secrets)
 4. Deploy
+
+### CORS
+
+Allowed origins are configured in `backend/config/middlewares.ts`:
+- `http://localhost:5173`
+- `https://psychologists-services-98v1.vercel.app`
+- All `https://psychologists-services-*.vercel.app` preview deployments
+
+---
+
+## Uptime Monitoring
+
+Strapi Cloud free tier puts the instance to sleep after inactivity.
+**UptimeRobot** (free plan) pings the health endpoint every 5 minutes to prevent cold starts:
+
+```
+Monitor URL:  https://thankful-moonlight-dc4a61a084.strapiapp.com/_health
+Method:       GET
+Interval:     every 5 minutes
+Expected:     HTTP 204
+```
 
 ---
 
@@ -255,16 +308,26 @@ Authentication is handled by the **Strapi Users & Permissions** plugin.
 
 ---
 
-## Documentation
+## Privacy & GDPR
 
-Detailed docs are in the [`/docs`](./docs) folder:
+| Feature | Implementation |
+|---|---|
+| Cookie consent | Banner shown on first visit; choice stored in `localStorage` as `cookie_consent` |
+| Privacy Policy | Static page at `/privacy` |
+| Consent on registration | Required checkbox linking to `/privacy` |
+| Consent on psychologist application | Required checkbox with explicit data processing notice |
+| Right to erasure | User menu → Delete account → deletes all appointments and user record via `DELETE /api/users/me/delete-account` |
+| Psychologist offboarding | If the user has a linked psychologist profile, they are informed it will be removed within 2–3 business days |
 
-- [Architecture](./docs/ARCHITECTURE.md) — system design, state management, key decisions
-- [API Reference](./docs/API.md) — all Strapi endpoints with request/response examples
-- [Component Reference](./docs/COMPONENTS.md) — props and behaviour of every component
-- [Deployment Guide](./docs/DEPLOYMENT.md) — Vercel + Strapi Cloud setup step by step
-- [Security](./docs/SECURITY.md) — auth model, env vars, CORS, known limitations
-- [Testing](./docs/TESTING.md) — test stack, how to run, what is covered
+---
+
+## Running Tests
+
+```bash
+npm run test          # watch mode
+npm run test:run      # single run
+npm run test:coverage # coverage report
+```
 
 ---
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Modal from '../Modal/Modal.jsx'
 import styles from './AuthModal.module.css'
@@ -11,6 +12,7 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [consent, setConsent] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
@@ -22,6 +24,7 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
     else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
     if (!password) errs.password = 'Password is required'
     else if (password.length < 6) errs.password = 'Password must be at least 6 characters'
+    if (!isLogin && !consent) errs.consent = 'You must accept the Privacy Policy to register'
     return errs
   }
 
@@ -107,6 +110,26 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
             </div>
             {errors.password && <span className="input-error-msg">{errors.password}</span>}
           </div>
+
+          {!isLogin && (
+            <div className="input-group">
+              <label className={styles.consentLabel}>
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className={styles.consentCheckbox}
+                />
+                <span>
+                  I agree to the{' '}
+                  <Link to="/privacy" target="_blank" className={styles.consentLink}>
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+              {errors.consent && <span className="input-error-msg">{errors.consent}</span>}
+            </div>
+          )}
 
           <button
             type="submit"

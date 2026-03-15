@@ -160,6 +160,26 @@ export const addReview = async (psychologistId, review, jwt) => {
   }
 };
 
+// Returns true if a psychologist record linked to this email exists.
+// Requires 'user_email' (Email field) on the Psychologist content type in Strapi admin.
+export const checkIsUserPsychologist = async (email) => {
+  try {
+    const response = await strapiApi.get(
+      `/psychologists?filters[user_email][$eq]=${encodeURIComponent(email)}&pagination[pageSize]=1`
+    );
+    return response.data.data.length > 0;
+  } catch {
+    return false;
+  }
+};
+
+export const deleteAccount = async (jwt) => {
+  const response = await strapiApi.delete('/users/me/delete-account', {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  return response.data;
+};
+
 export const cancelAppointment = async (documentId, jwt) => {
   await strapiApi.delete(`/appointments/${documentId}`, {
     headers: { Authorization: `Bearer ${jwt}` }

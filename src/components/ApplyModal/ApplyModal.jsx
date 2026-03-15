@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { submitPsychologistApplication } from '../../strapi/strapi.js'
 import { DEFAULT_AVAILABILITY } from '../../utils/availability.js'
@@ -32,9 +33,13 @@ const INITIAL_FORM = {
 }
 
 export default function ApplyModal({ onClose }) {
-  const { token } = useAuth()
+  const { token, user, register: registerUser } = useAuth()
   const [form, setForm] = useState(INITIAL_FORM)
   const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY)
+  const [consent, setConsent] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -54,6 +59,13 @@ export default function ApplyModal({ onClose }) {
       errs.price_per_hour = 'Enter valid price'
     if (!form.about.trim() || form.about.trim().length < 50)
       errs.about = 'Please write at least 50 characters'
+    if (!consent) errs.consent = 'You must accept the Privacy Policy to submit'
+    if (!token) {
+      if (!email.trim()) errs.email = 'Email is required'
+      else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
+      if (!password) errs.password = 'Password is required'
+      else if (password.length < 6) errs.password = 'At least 6 characters'
+    }
     return errs
   }
 
@@ -62,6 +74,31 @@ export default function ApplyModal({ onClose }) {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
+
+    let jwt = token
+    let userEmail = user?.email
+
+    // Not logged in: create account first
+    if (!token) {
+      try {
+        const result = await registerUser(
+          `Dr. ${form.name.trim()} ${form.surname.trim()}`,
+          email.trim(),
+          password
+        )
+        jwt = result.jwt
+        userEmail = email.trim()
+      } catch (err) {
+        const msg = (err.message || '').toLowerCase()
+        if (msg.includes('taken') || msg.includes('email') || msg.includes('username')) {
+          setErrors({ email: 'This email is already registered. Please log in first.' })
+        } else {
+          setErrors({ api: err.message || 'Failed to create account. Please try again.' })
+        }
+        setLoading(false)
+        return
+      }
+    }
 
     try {
       await submitPsychologistApplication({
@@ -78,7 +115,8 @@ export default function ApplyModal({ onClose }) {
         rating: 0,
         popular: false,
         isAvailable: true,
-      }, token)
+        user_email: userEmail,
+      }, jwt)
 
       setSubmitted(true)
     } catch (err) {
@@ -157,6 +195,52 @@ export default function ApplyModal({ onClose }) {
             />
           </div>
 
+          {/* Account creation — only for non-logged-in users */}
+          {!token && (
+            <>
+              <p className={styles.sectionLabel}>Your account</p>
+              <p className={styles.accountHint}>
+                An account will be created automatically so you can manage your profile.
+                {' '}Already have one?{' '}
+                <button type="button" className={styles.loginHintBtn} onClick={onClose}>
+                  Log in first
+                </button>
+              </p>
+              <div className="input-group">
+                <input
+                  className={`input-field ${errors.email ? 'error' : ''}`}
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+                {errors.email && <span className="input-error-msg">{errors.email}</span>}
+              </div>
+              <div className="input-group">
+                <div className="input-wrapper">
+                  <input
+                    className={`input-field ${errors.password ? 'error' : ''}`}
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="Password (min. 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="input-toggle-btn"
+                    onClick={() => setShowPass((v) => !v)}
+                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                  >
+                    {showPass ? '🙈' : '👁'}
+                  </button>
+                </div>
+                {errors.password && <span className="input-error-msg">{errors.password}</span>}
+              </div>
+            </>
+          )}
+
           <p className={styles.sectionLabel}>Professional details</p>
           <div className="input-group">
             <select
@@ -234,6 +318,25 @@ export default function ApplyModal({ onClose }) {
               rows={4}
             />
             {errors.about && <span className="input-error-msg">{errors.about}</span>}
+          </div>
+
+          <div className="input-group">
+            <label className={styles.consentLabel}>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className={styles.consentCheckbox}
+              />
+              <span>
+                I agree to the{' '}
+                <Link to="/privacy" target="_blank" className={styles.consentLink}>
+                  Privacy Policy
+                </Link>{' '}
+                and consent to the processing of my personal data
+              </span>
+            </label>
+            {errors.consent && <span className="input-error-msg">{errors.consent}</span>}
           </div>
 
           <button

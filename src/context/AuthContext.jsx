@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import axios from 'axios'
-import { getUserFavorites } from '../strapi/strapi.js'
+import { getUserFavorites, deleteAccount as strapiDeleteAccount } from '../strapi/strapi.js'
 
 // The Strapi backend URL
 const STRAPI_URL = import.meta.env.VITE_STRAPI_URL
@@ -80,8 +80,15 @@ export function AuthProvider({ children }) {
     setFavorites([])
   }
 
+  const deleteAccount = async () => {
+    await strapiDeleteAccount(token)
+    setToken(null)
+    setUser(null)
+    setFavorites([])
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, favorites, setFavorites, register, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, favorites, setFavorites, register, login, logout, deleteAccount }}>
       {!loading && children}
     </AuthContext.Provider>
   )

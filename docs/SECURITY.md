@@ -71,17 +71,23 @@ The frontend does not hold any API tokens or admin credentials. All privileged o
 
 ## CORS
 
-The backend currently uses Strapi's default CORS middleware, which allows all origins in development.
+CORS is explicitly configured in `backend/config/middlewares.ts`. Allowed origins:
 
-**Recommended production configuration** (`backend/config/middlewares.ts`):
+- `http://localhost:5173` (local dev)
+- `https://psychologists-services-98v1.vercel.app` (production)
+- All `https://psychologists-services-*.vercel.app` preview deployments (regex match)
 
 ```typescript
 {
   name: 'strapi::cors',
   config: {
-    origin: ['https://psychologists-services-98v1.vercel.app'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
-    headers: ['Content-Type', 'Authorization'],
+    origin: [
+      'http://localhost:5173',
+      'https://psychologists-services-98v1.vercel.app',
+      /^https:\/\/psychologists-services-.*\.vercel\.app$/,
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+    headers: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
     keepHeaderOnError: true,
   },
 }
