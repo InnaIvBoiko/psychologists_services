@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import Header from './components/Header/Header.jsx'
+import Footer from './components/Footer/Footer.jsx'
 import CookieBanner from './components/CookieBanner/CookieBanner.jsx'
 import HomePage from './pages/HomePage/HomePage.jsx'
 import PsychologistsPage from './pages/PsychologistsPage/PsychologistsPage.jsx'
@@ -33,6 +34,7 @@ function AppRoutes() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
+      <Footer />
       <CookieBanner />
     </>
   )
