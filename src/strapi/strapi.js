@@ -3,18 +3,73 @@ import axios from 'axios';
 // The default base URL where Strapi runs locally or in production
 const STRAPI_URL = import.meta.env.VITE_STRAPI_URL;
 
+if (!STRAPI_URL) {
+  // Fail loudly at build/startup instead of silently building "undefined/api/..." URLs
+  // that return a misleading 404. Set VITE_STRAPI_URL in .env locally and in the
+  // Vercel project Environment Variables for production builds.
+  throw new Error(
+    'VITE_STRAPI_URL is not defined. Set it in .env (local) and in Vercel Environment Variables.'
+  );
+}
+
 const strapiApi = axios.create({
   baseURL: `${STRAPI_URL}/api`,
+  // Strapi Cloud (free tier) sleeps after inactivity; the first request after a
+  // cold start can take ~20-30s to wake up. Give it room instead of failing fast.
+  timeout: 45000,
+});
+
+// Automatically retry GET requests that fail while Strapi is waking up (network
+// error, timeout, or a 5xx response during the cold start). Retries are limited to
+// GET so we never repeat a POST/DELETE — that could e.g. double-book an appointment.
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY = 1500; // ms — grows exponentially: 1.5s, 3s, 6s
+
+strapiApi.interceptors.response.use(undefined, async (error) => {
+  const config = error.config;
+  if (!config || (config.method || '').toLowerCase() !== 'get') {
+    return Promise.reject(error);
+  }
+
+  const status = error.response?.status;
+  // No response at all = network error / timeout; 5xx = server still warming up.
+  const isColdStart = !error.response || status >= 500;
+  if (!isColdStart) {
+    return Promise.reject(error);
+  }
+
+  config.__retryCount = config.__retryCount || 0;
+  if (config.__retryCount >= MAX_RETRIES) {
+    return Promise.reject(error);
+  }
+
+  config.__retryCount += 1;
+  const delay = RETRY_BASE_DELAY * 2 ** (config.__retryCount - 1);
+  await new Promise((resolve) => setTimeout(resolve, delay));
+  return strapiApi(config);
 });
 
 export const getPsychologists = async () => {
   try {
-    // The `populate=*` parameter tells Strapi to return attached media/images as well
-    const response = await strapiApi.get('/psychologists?populate=*');
+    // Filtering, sorting and search are done client-side, so the UI needs the FULL
+    // list. Strapi caps a single response at its default page size (25), so we loop
+    // over every page instead of relying on that default — otherwise records beyond
+    // the first page would silently never reach the frontend.
+    const all = [];
+    let page = 1;
+    let pageCount = 1;
+    do {
+      // `populate=*` also returns attached media/images.
+      const response = await strapiApi.get(
+        `/psychologists?populate=*&pagination[page]=${page}&pagination[pageSize]=100`
+      );
+      all.push(...response.data.data);
+      pageCount = response.data.meta?.pagination?.pageCount ?? 1;
+      page += 1;
+    } while (page <= pageCount);
 
-    // Strapi v5 returns formatted data inside a `data` object
-    // We map the response to have a simpler array for React to handle
-    return response.data.data.map((item) => {
+    // Strapi v5 returns data inside a `data` object; map it to a simpler shape.
+    return all.map((item) => {
       // Strapi v5 uses `documentId` (string) as the primary identifier for APIs,
       // but the old numeric `id` is often still used in relations/internal JSON.
       return {

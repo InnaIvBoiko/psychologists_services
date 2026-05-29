@@ -33,7 +33,9 @@ Every push to `main` triggers an automatic redeploy.
 |---|---|
 | `VITE_STRAPI_URL` | Full URL of the Strapi instance (no trailing slash) |
 
-> Without this variable, all API calls will fail with `undefined` in the URL.
+> `VITE_*` variables are baked in at **build time**, not runtime. After adding or changing the value, you must **redeploy** (a redeploy without build cache is safest) — existing builds keep the old value.
+
+> If the variable is missing, the app now **throws a clear error at startup** (`VITE_STRAPI_URL is not defined…`) instead of silently building `undefined/api/...` URLs that return a misleading 404.
 
 ---
 
@@ -70,6 +72,14 @@ Every push to `main` triggers an automatic redeploy.
 ### Subsequent deploys
 
 Every push to `main` triggers an automatic redeploy of the backend.
+
+### Cold starts (free tier sleeps)
+
+Strapi Cloud's free tier puts the instance to **sleep after inactivity**. The first request after sleep is a **cold start** (~20–30s measured) and can otherwise surface as a slow load, a timeout, or a `503`.
+
+- **Mitigation (frontend):** the API client tolerates cold starts with a 45s timeout + GET retry (see [ARCHITECTURE — Strapi API client](ARCHITECTURE.md#strapi-api-client-strapistrapijs)), so a sleeping backend no longer breaks the first page load.
+- **Mitigation (keep-alive):** an UptimeRobot monitor pings the instance to reduce sleeping. The free interval is 5 min, which is not always enough — verify the monitor is active and points at a real endpoint (e.g. `/api/psychologists`).
+- **Definitive fix:** a paid Strapi Cloud plan that does not sleep.
 
 ---
 

@@ -59,10 +59,12 @@ POST /api/auth/local
 ### List all
 
 ```
-GET /api/psychologists?populate=*
+GET /api/psychologists?populate=*&pagination[page]=<n>&pagination[pageSize]=100
 ```
 
-Returns all **published** psychologists with media populated.
+Returns **published** psychologists with media populated.
+
+> **Pagination:** Strapi caps a single response at its default page size (25). Because filtering, sorting and search are done **client-side**, the frontend needs the complete list, so `getPsychologists()` loops over `meta.pagination.pageCount` (with `pageSize=100`) and concatenates every page. Without this, any psychologist beyond the first 25 would silently never reach the UI.
 
 **Response shape**
 ```json

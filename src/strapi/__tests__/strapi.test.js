@@ -3,7 +3,12 @@ import axios from 'axios'
 
 // Mock axios so no real HTTP calls are made
 vi.mock('axios', () => {
-  const instance = { get: vi.fn(), post: vi.fn() }
+  const instance = {
+    get: vi.fn(),
+    post: vi.fn(),
+    // strapi.js registers a retry interceptor at import time
+    interceptors: { response: { use: vi.fn() } },
+  }
   return {
     default: {
       create: vi.fn(() => instance),

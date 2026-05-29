@@ -24,6 +24,13 @@ Browser
 **Styling:** CSS Modules + global CSS custom properties
 **HTTP client:** Axios
 
+### Strapi API client (`strapi/strapi.js`)
+
+A single Axios instance wraps all backend calls. Two behaviours worth noting:
+
+- **Cold-start tolerance.** Strapi Cloud (free tier) sleeps after inactivity; the first request can take ~20–30s to wake up. The instance uses a **45s timeout** and a **response interceptor that auto-retries GET requests** (up to 3×, exponential backoff: 1.5s → 3s → 6s) on network errors, timeouts, or `5xx` responses. Retries are limited to GET so `POST`/`DELETE` are never repeated (e.g. no double-booked appointments).
+- **Fail-fast on misconfiguration.** If `VITE_STRAPI_URL` is missing, the module throws at import time instead of silently building `undefined/api/...` URLs that return a misleading 404.
+
 ### State management
 
 No external state library. State is split across:
@@ -175,6 +182,12 @@ Publish     Delete
    ▼
 Profile visible on /psychologists
 ```
+
+### Client-side filtering, sorting and "Load more"
+
+Filtering, sorting, search, and the "Load more" button on `/psychologists` all run **client-side** on the already-fetched list (`PsychologistsPage` slices the array; `PAGE_SIZE = 3`). This is a deliberate fit for the dataset size and the sleeping backend: a single fetch up front keeps interactions instant and avoids hitting a cold-starting Strapi on every filter change.
+
+Because of this, `getPsychologists()` must return the **full** list (see [API — List all](API.md#psychologists)) — it pages through all results rather than relying on Strapi's default 25-record page. If the dataset ever grows into the hundreds/thousands, move filtering/pagination server-side (Strapi `filters`, `sort`, `pagination` query params).
 
 ### `documentId` vs numeric `id`
 

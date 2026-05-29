@@ -192,7 +192,7 @@ All requests go through `src/strapi/strapi.js`.
 
 | Function | Method | Endpoint |
 |---|---|---|
-| `getPsychologists()` | GET | `/api/psychologists` |
+| `getPsychologists()` | GET | `/api/psychologists` (pages through all results — filters are client-side) |
 | `getPsychologistById(id)` | GET | `/api/psychologists/:id` |
 | `checkIsUserPsychologist(email)` | GET | `/api/psychologists?filters[user_email][$eq]=...` |
 | `togglePsychologistFavorite(id, jwt)` | POST | `/api/psychologists/:id/toggle-favorite` |
@@ -294,6 +294,8 @@ Method:       GET
 Interval:     every 5 minutes
 Expected:     HTTP 204
 ```
+
+> The 5-minute ping reduces — but does not fully eliminate — sleeping; a cold start can still take ~20–30s. The frontend API client tolerates this with a 45s timeout and automatic GET retries, so a sleeping backend does not break the first page load. A non-sleeping (paid) Strapi Cloud plan is the only definitive fix.
 
 ---
 
