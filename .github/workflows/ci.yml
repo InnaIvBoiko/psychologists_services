@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    env:
+      # PrismaClient reads DATABASE_URL lazily (only on connect), so a dummy value
+      # is enough for `prisma generate` (postinstall) and the unit tests, which never
+      # touch the database. No real secrets are needed for CI.
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/db?sslmode=require"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:run
