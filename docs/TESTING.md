@@ -33,14 +33,12 @@ Coverage report is written to `coverage/` and opened via `coverage/index.html`.
 
 ```
 src/
-├── strapi/__tests__/
-│   └── strapi.test.js            # API client functions
 ├── utils/__tests__/
 │   └── availability.test.js      # Slot generation logic (see below)
 ├── hooks/__tests__/
 │   └── useFavorites.test.js      # useFavorites custom hook
 ├── context/__tests__/
-│   └── AuthContext.test.jsx      # AuthContext provider
+│   └── AuthContext.test.jsx      # AuthContext provider (Auth.js)
 └── components/
     ├── AppointmentModal/__tests__/
     │   ├── AppointmentModal.test.jsx  # Booking modal — auth notice, guest flow
@@ -48,6 +46,10 @@ src/
     └── Header/__tests__/
         └── NotificationBell.test.jsx  # Notification bell + review prompt
 ```
+
+> **Migration note (Strapi → Next.js):** the data layer now lives in `src/lib/api.js` and is mocked as `@/lib/api`. The old `src/strapi/` directory — including `src/strapi/__tests__/strapi.test.js` — was removed. Page bodies have moved to `src/views/`; component tests remain under `src/components/**/__tests__`.
+
+**Current status:** the full suite passes — **5 test files, 51 tests green**.
 
 ---
 
@@ -66,27 +68,7 @@ Pure functions in `src/utils/availability.js` — no mocks needed.
 
 > This file is listed in the test tree but not yet created — it is a pure utility with no dependencies and is a good candidate for the next round of tests.
 
----
-
-### `strapi.test.js` — API client (16 tests)
-
-Tests for all functions in `src/strapi/strapi.js`. Axios is mocked — no real HTTP calls are made.
-
-| Function | Cases covered |
-|---|---|
-| `getPsychologists` | Maps Strapi v5 response (documentId, strapiId), empty array on error |
-| `getPsychologistById` | Maps single item, returns null on error |
-| `getUserFavorites` | Returns array, handles missing field, parses JSON string, skips call when no JWT |
-| `getBookedSlots` | Extracts HH:MM from time_slot, guards against missing date, filters empty entries, empty array on error |
-| `getUserAppointments` | Filters out past dates, sorts by time_slot, guards against missing email/token |
-| `getPastAppointmentsForReview` | Filters to last 60 days, includes patient_name, returns empty array on error |
-| `createAppointment` | Wraps payload in `data`, passes JWT header, throws readable error message on failure |
-| `addReview` | POSTs to `/psychologists/:id/add-review`, passes JWT header, throws on error |
-| `getDismissedReviews` | Reads `psy_dismissed_reviews` from `/users/me`, parses JSON string, returns `[]` on error |
-| `dismissAppointmentReview` | POSTs to `/users/dismiss-review`, no-op when no JWT |
-| `cancelAppointment` | DELETEs `/appointments/:documentId` with JWT header |
-
-> **Note on `id` vs `documentId`:** Strapi v5 returns both a numeric `id` and a string `documentId`. The mapping code does `{ id: item.documentId, strapiId: String(item.id), ...item }` — because `...item` is spread last, it overwrites the `id` shortcut with the numeric value. The `documentId` string is accessible via `result.documentId`. Tests reflect this actual behavior.
+> **Removed in the migration:** the dedicated `src/strapi/__tests__/strapi.test.js` (16 tests for the Strapi axios client) was deleted together with `src/strapi/`. Data-layer functions now live in `src/lib/api.js` and are exercised indirectly through the component and context tests that mock `@/lib/api`.
 
 ---
 
@@ -104,16 +86,16 @@ Tests for all functions in `src/strapi/strapi.js`. Axios is mocked — no real H
 
 ### `AuthContext.test.jsx` — Auth provider (6 tests)
 
-Axios `post` and `getUserFavorites` are mocked.
+> **Rewritten in the migration.** Authentication now goes through Auth.js (NextAuth) instead of a direct Strapi login. This file no longer mocks `axios` + `strapi.js`; it mocks `next-auth/react` (`useSession`, `signIn`, `signOut`, `SessionProvider`) and `@/lib/api` (`getUserFavorites`, `deleteAccount`). The `token` value is always `null` now — the session is managed by Auth.js rather than a stored JWT.
 
 | Scenario | What is verified |
 |---|---|
-| Initial state | `user`, `token` are null, `favorites` is empty |
-| Successful login | `user.displayName` and `token` are set from response |
-| Login + favorites | Favorites are fetched and stored after login |
-| Login error | Promise rejects with the Strapi error message |
-| Successful register | `user` and `token` are set |
-| Logout | `user`, `token`, `favorites` are all cleared |
+| Initial state | Starts logged-out: `user` is null, `token` is null, `favorites` is empty |
+| Authenticated session | When `useSession` reports an authenticated user, the provider exposes that user and loads their favorites via `getUserFavorites` (`token` stays `null`) |
+| `login` | Calls `signIn('credentials', { email, password, redirect: false })` |
+| Login error | Rejects with `Invalid email or password` when `signIn` returns an error |
+| `register` | POSTs to `/api/register`, then calls `signIn('credentials', …)` |
+| `logout` | Calls `signOut` |
 
 ---
 
@@ -187,16 +169,18 @@ Axios `post` and `getUserFavorites` are mocked.
 
 ## Mocking strategy
 
-### Axios (strapi.test.js)
+### Auth.js (AuthContext.test.jsx)
 
 ```js
-vi.mock('axios', () => {
-  const instance = { get: vi.fn(), post: vi.fn() }
-  return { default: { create: vi.fn(() => instance) } }
-})
+vi.mock('next-auth/react', () => ({
+  useSession: () => sessionValue,
+  signIn: (...args) => mockSignIn(...args),
+  signOut: (...args) => mockSignOut(...args),
+  SessionProvider: ({ children }) => children,
+}))
 ```
 
-The same mock instance is shared between the test file and the module under test, so `strapiApi.get.mockResolvedValueOnce(...)` directly controls what `strapi.js` receives.
+A mutable `sessionValue` object simulates logged-out vs authenticated states, and the `signIn` / `signOut` spies let tests assert how the provider drives Auth.js.
 
 ### Context mocks (hooks / components)
 
@@ -208,10 +192,12 @@ vi.mock('../../context/AuthContext.jsx', () => ({
 
 A plain object (`mockAuth`) is mutated between tests to simulate different auth states (logged in, logged out).
 
-### Strapi API mocks (components)
+### Data-layer mocks (components)
+
+The data layer is now mocked via its `@` alias (`@/lib/api`) instead of the old `../../strapi/strapi.js` path. For example, `NotificationBell.test.jsx`:
 
 ```js
-vi.mock('../../strapi/strapi.js', () => ({
+vi.mock('@/lib/api', () => ({
   getUserAppointments: (...args) => mockGetUserAppointments(...args),
   getPastAppointmentsForReview: (...args) => mockGetPastAppointmentsForReview(...args),
   getDismissedReviews: (...args) => mockGetDismissedReviews(...args),
@@ -220,22 +206,36 @@ vi.mock('../../strapi/strapi.js', () => ({
 }))
 ```
 
-Each test controls the resolved value with `mockGetUserAppointments.mockResolvedValue(...)`.
+`AppointmentModal.test.jsx` likewise mocks `@/lib/api` (for `getBookedSlots` and `createAppointment`). Each test controls the resolved value with `mockGetUserAppointments.mockResolvedValue(...)`.
 
 ---
 
 ## Configuration
 
-**`vite.config.js`**
+The test runner config moved from `vite.config.js` to **`vitest.config.js`**. The app itself now builds with Next.js — Vitest continues to run on Vite, but only for the test suite. The config also defines an `@` → `./src` alias so tests can import (and mock) modules such as `@/lib/api`.
+
+**`vitest.config.js`**
 ```js
-test: {
-  environment: 'jsdom',
-  globals: true,
-  setupFiles: './src/test/setup.js',
-}
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'node:path'
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(import.meta.dirname, './src'),
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+  },
+})
 ```
 
-**`src/test/setup.js`**
+**`src/test/setup.js`** (unchanged)
 ```js
 import '@testing-library/jest-dom'
 ```

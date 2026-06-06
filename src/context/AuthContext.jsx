@@ -1,95 +1,83 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import axios from 'axios'
-import { getUserFavorites, deleteAccount as strapiDeleteAccount } from '../strapi/strapi.js'
+'use client'
 
-// The Strapi backend URL
-const STRAPI_URL = import.meta.env.VITE_STRAPI_URL
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useSession, signIn, signOut } from 'next-auth/react'
+import { getUserFavorites, deleteAccount as apiDeleteAccount } from '@/lib/api'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data: session, status } = useSession()
+  const loading = status === 'loading'
   const [favorites, setFavorites] = useState([])
 
-  // Since the user wants to strictly use memory (no localStorage),
-  // on page reload the user will always be logged out.
-  // Make sure to clean up any old data left in the browser.
+  // Normalize the Auth.js session user to the shape the rest of the app expects.
+  const user = session?.user
+    ? {
+        ...session.user,
+        displayName: session.user.username || session.user.name || session.user.email,
+      }
+    : null
+
+  // Sync favorites whenever the logged-in identity changes.
+  const userEmail = user?.email
   useEffect(() => {
-    localStorage.removeItem('user')
-    localStorage.removeItem('jwt')
-    localStorage.removeItem('psy_favorites')
-    setLoading(false)
-  }, [])
+    let active = true
+    if (userEmail) {
+      getUserFavorites().then((favs) => {
+        if (active) setFavorites(favs)
+      })
+    } else {
+      setFavorites([])
+    }
+    return () => {
+      active = false
+    }
+  }, [userEmail])
 
   const register = async (name, email, password) => {
-    try {
-      const response = await axios.post(`${STRAPI_URL}/api/auth/local/register`, {
-        username: name,
-        email: email,
-        password: password,
-      })
-
-      const { jwt, user: strapiUser } = response.data
-
-      // Map the Strapi user to be compatible with the rest of the app
-      const normalizedUser = { ...strapiUser, displayName: strapiUser.username }
-
-      setToken(jwt)
-      setUser(normalizedUser)
-
-      return response.data
-    } catch (error) {
-      console.error("Strapi registration error:", error.response?.data?.error || error.message)
-      throw new Error(error.response?.data?.error?.message || "Registration failed")
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, email, password }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      throw new Error(data?.error?.message || 'Registration failed')
     }
+    // Auto-login right after a successful registration.
+    const signInRes = await signIn('credentials', { email, password, redirect: false })
+    if (signInRes?.error) {
+      throw new Error('Login after registration failed')
+    }
+    return data
   }
 
   const login = async (email, password) => {
-    try {
-      const response = await axios.post(`${STRAPI_URL}/api/auth/local`, {
-        identifier: email,
-        password: password,
-      })
-
-      const { jwt, user: strapiUser } = response.data
-
-      // Map the Strapi user to be compatible with the rest of the app
-      const normalizedUser = { ...strapiUser, displayName: strapiUser.username }
-
-      setToken(jwt)
-      setUser(normalizedUser)
-
-      // Sync favorites
-      try {
-        const favIds = await getUserFavorites(jwt)
-        setFavorites(favIds)
-      } catch (e) { console.error(e) }
-
-      return response.data
-    } catch (error) {
-      console.error("Strapi login error:", error.response?.data?.error || error.message)
-      throw new Error(error.response?.data?.error?.message || "Login failed")
+    const res = await signIn('credentials', { email, password, redirect: false })
+    if (res?.error) {
+      throw new Error('Invalid email or password')
     }
+    return res
   }
 
   const logout = () => {
-    setToken(null)
-    setUser(null)
     setFavorites([])
+    signOut({ redirect: false })
   }
 
   const deleteAccount = async () => {
-    await strapiDeleteAccount(token)
-    setToken(null)
-    setUser(null)
+    await apiDeleteAccount()
     setFavorites([])
+    await signOut({ redirect: false })
   }
 
+  // `token` is kept for backward compatibility with call sites; auth is now cookie-based.
   return (
-    <AuthContext.Provider value={{ user, token, loading, favorites, setFavorites, register, login, logout, deleteAccount }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{ user, token: null, loading, favorites, setFavorites, register, login, logout, deleteAccount }}
+    >
+      {children}
     </AuthContext.Provider>
   )
 }

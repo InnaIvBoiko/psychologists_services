@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@/lib/router'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Modal from '../Modal/Modal.jsx'
 import styles from './AuthModal.module.css'

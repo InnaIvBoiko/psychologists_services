@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { addReview } from '../../strapi/strapi.js'
+import { addReview } from '@/lib/api'
 import Modal from '../Modal/Modal.jsx'
 import styles from './ReviewModal.module.css'
 

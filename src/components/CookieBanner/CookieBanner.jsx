@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@/lib/router'
 import styles from './CookieBanner.module.css'
 
 const STORAGE_KEY = 'cookie_consent'

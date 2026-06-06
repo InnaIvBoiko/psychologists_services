@@ -1,29 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act, waitFor } from '@testing-library/react'
+
+// ---------------------------------------------------------------------------
+// Mock Auth.js (next-auth) and the data layer
+// ---------------------------------------------------------------------------
+const mockSignIn = vi.fn()
+const mockSignOut = vi.fn()
+let sessionValue = { data: null, status: 'unauthenticated' }
+
+vi.mock('next-auth/react', () => ({
+  useSession: () => sessionValue,
+  signIn: (...args) => mockSignIn(...args),
+  signOut: (...args) => mockSignOut(...args),
+  SessionProvider: ({ children }) => children,
+}))
+
+vi.mock('@/lib/api', () => ({
+  getUserFavorites: vi.fn().mockResolvedValue([]),
+  deleteAccount: vi.fn().mockResolvedValue({}),
+}))
+
 import { AuthProvider, useAuth } from '../AuthContext.jsx'
+import { getUserFavorites } from '@/lib/api'
 
 // ---------------------------------------------------------------------------
-// Mock axios and strapi helpers
-// ---------------------------------------------------------------------------
-vi.mock('axios', () => ({
-  default: {
-    post: vi.fn(),
-  },
-}))
-
-vi.mock('../../strapi/strapi.js', () => ({
-  getUserFavorites: vi.fn().mockResolvedValue(['1', '2']),
-}))
-
-import axios from 'axios'
-import { getUserFavorites } from '../../strapi/strapi.js'
-
-// ---------------------------------------------------------------------------
-// Helper: component that reads auth context and renders state
+// Helpers
 // ---------------------------------------------------------------------------
 function AuthConsumer() {
-  const { user, token, favorites, loading } = useAuth()
-  if (loading) return <p>Loading…</p>
+  const { user, token, favorites } = useAuth()
   return (
     <div>
       <p data-testid="user">{user ? user.displayName : 'null'}</p>
@@ -33,32 +37,31 @@ function AuthConsumer() {
   )
 }
 
-function LoginButton() {
-  const { login } = useAuth()
-  return (
-    <button onClick={() => login('user@test.com', 'password')}>Log in</button>
+function captureCtx() {
+  let ctx
+  function Capture() {
+    ctx = useAuth()
+    return null
+  }
+  render(
+    <AuthProvider>
+      <Capture />
+    </AuthProvider>
   )
-}
-
-function RegisterButton() {
-  const { register } = useAuth()
-  return (
-    <button onClick={() => register('Jane', 'jane@test.com', 'pass123')}>Register</button>
-  )
-}
-
-function LogoutButton() {
-  const { logout } = useAuth()
-  return <button onClick={logout}>Log out</button>
+  return () => ctx
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe('AuthContext', () => {
-  beforeEach(() => vi.clearAllMocks())
+describe('AuthContext (Auth.js)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    sessionValue = { data: null, status: 'unauthenticated' }
+    getUserFavorites.mockResolvedValue([])
+  })
 
-  it('starts with no user, no token, empty favorites', async () => {
+  it('starts with no user, null token, empty favorites', async () => {
     render(
       <AuthProvider>
         <AuthConsumer />
@@ -69,115 +72,76 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('favorites').textContent).toBe('[]')
   })
 
-  it('sets user and token after successful login', async () => {
-    axios.post.mockResolvedValueOnce({
-      data: {
-        jwt: 'my-jwt',
-        user: { id: 1, username: 'Jane', email: 'jane@test.com' },
-      },
-    })
-
-    render(
-      <AuthProvider>
-        <AuthConsumer />
-        <LoginButton />
-      </AuthProvider>
-    )
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Log in' }).click()
-    })
-
-    await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('Jane'))
-    expect(screen.getByTestId('token').textContent).toBe('my-jwt')
-  })
-
-  it('fetches favorites after login', async () => {
-    axios.post.mockResolvedValueOnce({
-      data: {
-        jwt: 'my-jwt',
-        user: { id: 1, username: 'Jane' },
-      },
-    })
+  it('exposes the session user and loads favorites when authenticated', async () => {
+    sessionValue = {
+      data: { user: { email: 'jane@test.com', username: 'Jane' } },
+      status: 'authenticated',
+    }
     getUserFavorites.mockResolvedValueOnce(['10', '20'])
 
     render(
       <AuthProvider>
         <AuthConsumer />
-        <LoginButton />
       </AuthProvider>
     )
 
-    await act(async () => {
-      screen.getByRole('button', { name: 'Log in' }).click()
-    })
-
+    await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('Jane'))
     await waitFor(() =>
       expect(screen.getByTestId('favorites').textContent).toBe('["10","20"]')
     )
-  })
-
-  it('throws on login failure', async () => {
-    axios.post.mockRejectedValueOnce({
-      response: { data: { error: { message: 'Invalid credentials' } } },
-    })
-
-    const { login } = (() => {
-      let ctx
-      function Capture() { ctx = useAuth(); return null }
-      render(<AuthProvider><Capture /></AuthProvider>)
-      return ctx
-    })()
-
-    await expect(login('bad@test.com', 'wrong')).rejects.toThrow('Invalid credentials')
-  })
-
-  it('sets user and token after successful register', async () => {
-    axios.post.mockResolvedValueOnce({
-      data: {
-        jwt: 'reg-jwt',
-        user: { id: 2, username: 'NewUser' },
-      },
-    })
-
-    render(
-      <AuthProvider>
-        <AuthConsumer />
-        <RegisterButton />
-      </AuthProvider>
-    )
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Register' }).click()
-    })
-
-    await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('NewUser'))
-    expect(screen.getByTestId('token').textContent).toBe('reg-jwt')
-  })
-
-  it('clears user and token after logout', async () => {
-    axios.post.mockResolvedValueOnce({
-      data: { jwt: 'my-jwt', user: { id: 1, username: 'Jane' } },
-    })
-
-    render(
-      <AuthProvider>
-        <AuthConsumer />
-        <LoginButton />
-        <LogoutButton />
-      </AuthProvider>
-    )
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Log in' }).click()
-    })
-    await waitFor(() => expect(screen.getByTestId('user').textContent).toBe('Jane'))
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Log out' }).click()
-    })
-    expect(screen.getByTestId('user').textContent).toBe('null')
     expect(screen.getByTestId('token').textContent).toBe('null')
-    expect(screen.getByTestId('favorites').textContent).toBe('[]')
+  })
+
+  it('login calls signIn with credentials', async () => {
+    mockSignIn.mockResolvedValueOnce({ error: null, ok: true })
+    const getCtx = captureCtx()
+
+    await act(async () => {
+      await getCtx().login('user@test.com', 'password')
+    })
+
+    expect(mockSignIn).toHaveBeenCalledWith('credentials', {
+      email: 'user@test.com',
+      password: 'password',
+      redirect: false,
+    })
+  })
+
+  it('login throws on invalid credentials', async () => {
+    mockSignIn.mockResolvedValueOnce({ error: 'CredentialsSignin' })
+    const getCtx = captureCtx()
+
+    await expect(getCtx().login('bad@test.com', 'wrong')).rejects.toThrow(
+      'Invalid email or password'
+    )
+  })
+
+  it('register posts to /api/register then signs in', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ user: { id: 2 } }) })
+    vi.stubGlobal('fetch', fetchMock)
+    mockSignIn.mockResolvedValueOnce({ error: null, ok: true })
+
+    const getCtx = captureCtx()
+    await act(async () => {
+      await getCtx().register('Jane', 'jane@test.com', 'pass123')
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/register', expect.objectContaining({ method: 'POST' }))
+    expect(mockSignIn).toHaveBeenCalledWith('credentials', {
+      email: 'jane@test.com',
+      password: 'pass123',
+      redirect: false,
+    })
+    vi.unstubAllGlobals()
+  })
+
+  it('logout calls signOut', async () => {
+    const getCtx = captureCtx()
+    await act(async () => {
+      getCtx().logout()
+    })
+    expect(mockSignOut).toHaveBeenCalled()
   })
 })

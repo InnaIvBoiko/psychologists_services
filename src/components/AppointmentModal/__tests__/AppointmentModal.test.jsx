@@ -8,7 +8,7 @@ import AppointmentModal from '../AppointmentModal.jsx'
 const mockGetBookedSlots = vi.fn()
 const mockCreateAppointment = vi.fn()
 
-vi.mock('../../../strapi/strapi.js', () => ({
+vi.mock('@/lib/api', () => ({
   getBookedSlots: (...args) => mockGetBookedSlots(...args),
   createAppointment: (...args) => mockCreateAppointment(...args),
 }))

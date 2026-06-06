@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext.jsx'
-import { togglePsychologistFavorite } from '../strapi/strapi.js'
+import { togglePsychologistFavorite } from '@/lib/api'
 
 export function useFavorites() {
   const { user, token, favorites, setFavorites } = useAuth()

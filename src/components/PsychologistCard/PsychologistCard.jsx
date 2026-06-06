@@ -35,11 +35,8 @@ export default function PsychologistCard({ psychologist, onToast }) {
     )
   })
 
-  // Format the image source since Strapi wraps media inside an object
-  // If the user uploaded an image from strapi admin panel, the url starts with /uploads
-  const avatarUrl = psychologist.image?.url
-    ? `${import.meta.env.VITE_STRAPI_URL}${psychologist.image.url}`
-    : psychologist.avatar;
+  // Avatars are plain remote URLs stored on the psychologist record.
+  const avatarUrl = psychologist.avatar;
 
   return (
     <>

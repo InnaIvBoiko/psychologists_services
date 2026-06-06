@@ -11,7 +11,7 @@ const mockGetDismissedReviews = vi.fn()
 const mockDismissAppointmentReview = vi.fn()
 const mockCancelAppointment = vi.fn()
 
-vi.mock('../../../strapi/strapi.js', () => ({
+vi.mock('@/lib/api', () => ({
   getUserAppointments: (...args) => mockGetUserAppointments(...args),
   getPastAppointmentsForReview: (...args) => mockGetPastAppointmentsForReview(...args),
   getDismissedReviews: (...args) => mockGetDismissedReviews(...args),
