@@ -194,7 +194,7 @@ All endpoints live under `src/app/api/` and are called from `src/lib/api.js` (sa
 | `togglePsychologistFavorite(id)` 🔒 | POST | `/api/psychologists/:id/toggle-favorite` |
 | `addReview(id, review)` 🔒 | POST | `/api/psychologists/:id/reviews` |
 | `getBookedSlots(psychId, date)` | GET | `/api/appointments?psychologist_id=&date=` |
-| `createAppointment(data)` 🔒 | POST | `/api/appointments` |
+| `createAppointment(data)` | POST | `/api/appointments` (guests allowed; rate-limited) |
 | `getUserAppointments()` 🔒 | GET | `/api/appointments/mine` |
 | `getPastAppointmentsForReview()` 🔒 | GET | `/api/appointments/mine` |
 | `cancelAppointment(id)` 🔒 | DELETE | `/api/appointments/:id` |

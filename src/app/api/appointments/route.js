@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,11 +22,16 @@ export async function GET(req) {
   return NextResponse.json(slots)
 }
 
-// POST /api/appointments — create a booking (login required).
+// POST /api/appointments — create a booking. Guests are allowed (the UI offers
+// "Send as a guest"); logged-in users can additionally track/cancel via /mine.
+// Rate-limited per IP since this is a public endpoint.
 export async function POST(req) {
-  const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: { message: 'Login required to book' } }, { status: 401 })
+  const { success } = await rateLimit('booking', getClientIp(req))
+  if (!success) {
+    return NextResponse.json(
+      { error: { message: 'Too many booking attempts. Please try again later.' } },
+      { status: 429 }
+    )
   }
 
   let b

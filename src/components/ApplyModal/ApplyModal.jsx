@@ -64,7 +64,7 @@ export default function ApplyModal({ onClose }) {
       if (!email.trim()) errs.email = 'Email is required'
       else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
       if (!password) errs.password = 'Password is required'
-      else if (password.length < 6) errs.password = 'At least 6 characters'
+      else if (password.length < 8) errs.password = 'At least 8 characters'
     }
     return errs
   }
@@ -220,7 +220,7 @@ export default function ApplyModal({ onClose }) {
                   <input
                     className={`input-field ${errors.password ? 'error' : ''}`}
                     type={showPass ? 'text' : 'password'}
-                    placeholder="Password (min. 6 characters)"
+                    placeholder="Password (min. 8 characters)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
