@@ -181,9 +181,9 @@ All endpoints live under `src/app/api/` and are called from `src/lib/api.js` (sa
 |---|---|---|
 | `getPsychologists()` | GET | `/api/psychologists` |
 | `getPsychologistById(id)` | GET | `/api/psychologists/:id` |
-| `submitPsychologistApplication(data)` | POST | `/api/psychologists` (created unpublished) |
+| `submitPsychologistApplication(data)` 🔒 | POST | `/api/psychologists` (created unpublished) |
 | `togglePsychologistFavorite(id)` 🔒 | POST | `/api/psychologists/:id/toggle-favorite` |
-| `addReview(id, review)` | POST | `/api/psychologists/:id/reviews` |
+| `addReview(id, review)` 🔒 | POST | `/api/psychologists/:id/reviews` |
 | `getBookedSlots(psychId, date)` | GET | `/api/appointments?psychologist_id=&date=` |
 | `createAppointment(data)` 🔒 | POST | `/api/appointments` |
 | `getUserAppointments()` 🔒 | GET | `/api/appointments/mine` |
@@ -215,7 +215,7 @@ Prisma models (`prisma/schema.prisma`) intentionally keep the **snake_case field
 | reviews | Json | Array of `{ reviewer, rating, comment, date }` |
 | popular, isAvailable | Boolean | |
 | availability | Json | Weekly schedule per day |
-| user_email | String | Links profile to the account that created it |
+| user_email | String | Links profile to the account that created it (stripped from public API responses) |
 | published | Boolean | Applications start `false` (hidden); replaces Strapi draft/publish |
 
 ### Appointment
@@ -269,7 +269,7 @@ Handled by **Auth.js v5** (`src/lib/auth.js`):
 | Privacy Policy | Static page at `/privacy` |
 | Consent on registration | Required checkbox linking to `/privacy` |
 | Consent on psychologist application | Required checkbox with explicit data-processing notice |
-| Right to erasure | User menu → Delete account → `DELETE /api/me` removes all appointments and the user record |
+| Right to erasure | User menu → Delete account → `DELETE /api/me` removes all appointments, any psychologist profile the user created, and the user record |
 
 ---
 

@@ -33,7 +33,7 @@ const INITIAL_FORM = {
 }
 
 export default function ApplyModal({ onClose }) {
-  const { token, user, register: registerUser } = useAuth()
+  const { user, register: registerUser } = useAuth()
   const [form, setForm] = useState(INITIAL_FORM)
   const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY)
   const [consent, setConsent] = useState(false)
@@ -60,7 +60,7 @@ export default function ApplyModal({ onClose }) {
     if (!form.about.trim() || form.about.trim().length < 50)
       errs.about = 'Please write at least 50 characters'
     if (!consent) errs.consent = 'You must accept the Privacy Policy to submit'
-    if (!token) {
+    if (!user) {
       if (!email.trim()) errs.email = 'Email is required'
       else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
       if (!password) errs.password = 'Password is required'
@@ -75,18 +75,16 @@ export default function ApplyModal({ onClose }) {
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
 
-    let jwt = token
     let userEmail = user?.email
 
-    // Not logged in: create account first
-    if (!token) {
+    // Not logged in: create account first (auto-login happens inside registerUser)
+    if (!user) {
       try {
-        const result = await registerUser(
+        await registerUser(
           `Dr. ${form.name.trim()} ${form.surname.trim()}`,
           email.trim(),
           password
         )
-        jwt = result.jwt
         userEmail = email.trim()
       } catch (err) {
         const msg = (err.message || '').toLowerCase()
@@ -116,7 +114,7 @@ export default function ApplyModal({ onClose }) {
         popular: false,
         isAvailable: true,
         user_email: userEmail,
-      }, jwt)
+      })
 
       setSubmitted(true)
     } catch (err) {
@@ -196,7 +194,7 @@ export default function ApplyModal({ onClose }) {
           </div>
 
           {/* Account creation — only for non-logged-in users */}
-          {!token && (
+          {!user && (
             <>
               <p className={styles.sectionLabel}>Your account</p>
               <p className={styles.accountHint}>

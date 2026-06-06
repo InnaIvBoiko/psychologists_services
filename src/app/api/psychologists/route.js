@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { serializePsychologist } from '@/lib/serialize'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,13 @@ export async function GET() {
 }
 
 // POST /api/psychologists — psychologist application, created UNPUBLISHED (hidden from the list).
+// Requires a logged-in session (the apply form registers/logs in the applicant first).
 export async function POST(req) {
+  const session = await auth()
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: { message: 'Login required to apply' } }, { status: 401 })
+  }
+
   let body
   try {
     body = await req.json()
@@ -44,7 +51,8 @@ export async function POST(req) {
       reviews: Array.isArray(body.reviews) ? body.reviews : [],
       isAvailable: body.isAvailable !== undefined ? Boolean(body.isAvailable) : true,
       availability: body.availability ?? null,
-      user_email: body.user_email ?? null,
+      // Bind the profile to the authenticated user (ignore any client-sent email).
+      user_email: session.user.email,
       published: false,
     },
   })

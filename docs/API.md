@@ -27,16 +27,16 @@ In the tables below, 🔒 marks endpoints that require a logged-in session.
 | Method | Path | Auth | Purpose |
 | ------ | ---- | ---- | ------- |
 | GET    | `/api/psychologists` | — | Published psychologists list |
-| POST   | `/api/psychologists` | — | Psychologist application (created unpublished) |
+| POST   | `/api/psychologists` | 🔒 | Psychologist application (created unpublished) |
 | GET    | `/api/psychologists/:id` | — | Single psychologist |
 | POST   | `/api/psychologists/:id/toggle-favorite` | 🔒 | Add/remove favorite |
-| POST   | `/api/psychologists/:id/reviews` | — | Append review, recompute average rating |
+| POST   | `/api/psychologists/:id/reviews` | 🔒 | Append review, recompute average rating |
 | GET    | `/api/appointments?psychologist_id=&date=` | — | Booked `HH:MM` slots for a day |
 | POST   | `/api/appointments` | 🔒 | Create a booking |
 | GET    | `/api/appointments/mine` | 🔒 | Current user's appointments |
 | DELETE | `/api/appointments/:id` | 🔒 | Cancel own appointment |
 | GET    | `/api/me` | 🔒 | Current user profile |
-| DELETE | `/api/me` | 🔒 | Delete account + own appointments |
+| DELETE | `/api/me` | 🔒 | Delete account + appointments + psychologist profile |
 | POST   | `/api/reviews/dismiss` | 🔒 | Dismiss a review prompt |
 | POST   | `/api/register` | — | Create an account |
 | GET/POST | `/api/auth/[...nextauth]` | — | Auth.js login/session |
@@ -194,7 +194,7 @@ No body required. Toggles `:id` in the logged-in user's `psy_favorites` array.
 POST /api/psychologists/:id/reviews
 ```
 
-`:id` is the numeric primary key.
+🔒 **Requires a logged-in session.** `:id` is the numeric primary key.
 
 **Body**
 ```json
@@ -234,8 +234,10 @@ to the psychologist's `reviews` JSON array, recomputes the average `rating`
 POST /api/psychologists
 ```
 
+🔒 **Requires a logged-in session** (the apply form registers/logs the applicant in first).
 Creates a new `Psychologist` row with `published: false`, so the profile is **not** visible
-in the public list until it is published.
+in the public list until it is published. `user_email` is taken from the session — any value
+sent in the body is ignored.
 
 **Body**
 ```json
@@ -261,8 +263,7 @@ in the public list until it is published.
   },
   "rating": 0,
   "popular": false,
-  "isAvailable": true,
-  "user_email": "jane@example.com"
+  "isAvailable": true
 }
 ```
 
@@ -436,8 +437,9 @@ a computed `isPsychologist` flag (true when a `Psychologist` row exists with a m
 DELETE /api/me
 ```
 
-Deletes the session user **and all their appointments** (matched by email), then removes the
-user row.
+Deletes the session user **and all their appointments** (matched by email) **and any
+psychologist profile they created** (matched by `user_email`), then removes the user row.
+This implements the GDPR right to erasure with no leftover personal data.
 
 **Response**
 ```json
@@ -457,7 +459,8 @@ from Strapi), so responses are a direct spread with no remapping:
 
 `src/lib/serialize.js` augments psychologist rows with `id`, `documentId` and `strapiId`
 (all derived from the numeric primary key) so existing front-end call sites that expected
-Strapi's identifiers keep working.
+Strapi's identifiers keep working. It also **strips `user_email`** from every psychologist
+response, so the profile owner's email (personal data) is never exposed publicly.
 
 The `published` boolean replaces Strapi's draft/publish workflow: regular records are
 `published: true`, while psychologist applications are created `published: false` and only

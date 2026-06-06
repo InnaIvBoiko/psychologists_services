@@ -42,7 +42,10 @@ export async function DELETE() {
     return NextResponse.json({ error: { message: 'User not found' } }, { status: 404 })
   }
 
+  // Right to erasure: remove the user's appointments and any psychologist profile
+  // they created (linked by email), then the account itself.
   await prisma.appointment.deleteMany({ where: { email: user.email } })
+  await prisma.psychologist.deleteMany({ where: { user_email: user.email } })
   await prisma.user.delete({ where: { id: userId } })
 
   return NextResponse.json({ message: 'Account deleted successfully' })

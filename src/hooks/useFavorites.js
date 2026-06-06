@@ -2,7 +2,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { togglePsychologistFavorite } from '@/lib/api'
 
 export function useFavorites() {
-  const { user, token, favorites, setFavorites } = useAuth()
+  const { user, favorites, setFavorites } = useAuth()
 
   const getFavorites = () => {
     if (!user) return []
@@ -29,11 +29,8 @@ export function useFavorites() {
     
     setFavorites(updated)
 
-    // Background backend update
-    if (token) {
-      // Pass the id that Strapi v5 expects to the custom endpoint
-      await togglePsychologistFavorite(psyObject.id, token)
-    }
+    // Background backend update (auth is via the session cookie now).
+    await togglePsychologistFavorite(psyObject.id)
   }
 
   return { getFavorites, isFavorite, toggleFavorite }

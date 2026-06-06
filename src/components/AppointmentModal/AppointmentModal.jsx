@@ -79,9 +79,11 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
         comment: form.comment.trim(),
         psychologist_id: psychologist.documentId,
         psychologist_name: psychologist.name
-      }, token)
+      })
 
       onSuccess?.()
+      // Tell the header's NotificationBell to refresh immediately.
+      window.dispatchEvent(new Event('appointments:changed'))
       onClose()
     } catch (error) {
       console.error(error)

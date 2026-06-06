@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/psychologists/:id/reviews — append a review and recompute the average rating.
 export async function POST(req, { params }) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: { message: 'Login required to review' } }, { status: 401 })
+  }
+
   const id = Number(params.id)
   if (!Number.isFinite(id)) {
     return NextResponse.json({ error: { message: 'Invalid psychologist id' } }, { status: 400 })

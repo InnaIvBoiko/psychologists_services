@@ -8,7 +8,7 @@ export default function PrivacyPage() {
         <Link to="/" className={styles.back}>← Back to Home</Link>
 
         <h1 className={styles.title}>Privacy Policy</h1>
-        <p className={styles.updated}>Last updated: March 15, 2026</p>
+        <p className={styles.updated}>Last updated: June 6, 2026</p>
 
         <section className={styles.section}>
           <h2>1. Introduction</h2>
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             <li><strong>Account data:</strong> name and email address provided during registration.</li>
             <li><strong>Appointment data:</strong> date, time, and the name of the psychologist you book with.</li>
             <li><strong>Favorites:</strong> the list of psychologists you save as favourites.</li>
-            <li><strong>Usage data:</strong> pages visited and actions taken, collected via cookies for functional purposes only.</li>
+            <li><strong>Application data:</strong> if you apply as a psychologist, the professional details you submit (name, specialization, licence, price, bio, availability).</li>
           </ul>
         </section>
 
@@ -35,35 +35,33 @@ export default function PrivacyPage() {
             <li>To create and manage your account.</li>
             <li>To book and manage appointments with psychologists.</li>
             <li>To save your favourite psychologists across sessions.</li>
-            <li>To send you appointment reminders and confirmations.</li>
-            <li>To improve the platform based on usage patterns.</li>
+            <li>To show your booked appointments in the notification area.</li>
+            <li>To process and manage psychologist applications.</li>
           </ul>
         </section>
 
         <section className={styles.section}>
           <h2>4. Cookies</h2>
           <p>
-            We use strictly necessary cookies to keep you logged in and remember your preferences
-            (e.g. cookie consent choice). We do not use advertising or tracking cookies.
-            You can decline cookies via the banner — note that declining may prevent you from staying logged in.
+            We use only <strong>strictly necessary cookies</strong> to keep you logged in (a secure,
+            HttpOnly session cookie) and to protect authentication requests (CSRF). These cookies do not
+            require consent under GDPR. Your cookie-banner choice is stored locally in your browser
+            (localStorage), not in a cookie. We do <strong>not</strong> use advertising, analytics, or
+            tracking cookies. Declining means you will not be able to stay logged in.
           </p>
         </section>
 
         <section className={styles.section}>
-          <h2>5. Third-Party Services</h2>
+          <h2>5. Third-Party Services (Data Processors)</h2>
           <ul>
             <li>
-              <strong>Strapi Cloud</strong> — our backend and database provider. Your data is stored on
-              Strapi&apos;s managed infrastructure.
+              <strong>Neon</strong> — our PostgreSQL database provider. Your account, appointment,
+              favourites and application data is stored on Neon&apos;s managed infrastructure in the EU
+              (Frankfurt, Germany).
             </li>
             <li>
-              <strong>Vercel</strong> — our frontend hosting provider. Network request logs may be
-              retained by Vercel for security purposes.
-            </li>
-            <li>
-              <strong>UptimeRobot</strong> — an uptime monitoring service that periodically pings
-              our backend health endpoint (<code>/_health</code>) to prevent cold starts. No personal
-              data is transmitted in these requests.
+              <strong>Vercel</strong> — our hosting provider for the application and its API. Network
+              request logs may be retained by Vercel for security purposes.
             </li>
           </ul>
           <p>We do not sell or share your personal data with any other third parties.</p>

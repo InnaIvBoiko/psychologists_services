@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import {
   getUserAppointments,
@@ -38,21 +38,33 @@ export default function NotificationBell() {
   const [cancelling, setCancelling] = useState(false)
   const ref = useRef(null)
 
-  useEffect(() => {
-    if (!user?.email || !token) {
+  const loadNotifications = useCallback(() => {
+    if (!user?.email) {
       setUpcoming([])
       setPendingReviews([])
       return
     }
-    getUserAppointments(user.email, token).then(setUpcoming)
+    getUserAppointments().then(setUpcoming)
 
     Promise.all([
-      getPastAppointmentsForReview(user.email, token),
-      getDismissedReviews(token),
+      getPastAppointmentsForReview(),
+      getDismissedReviews(),
     ]).then(([past, dismissed]) => {
       setPendingReviews(past.filter((a) => !dismissed.includes(String(a.id))))
     })
-  }, [user, token])
+  }, [user])
+
+  // Load on mount / when the user changes.
+  useEffect(() => {
+    loadNotifications()
+  }, [loadNotifications])
+
+  // Refresh immediately when an appointment is booked or cancelled elsewhere
+  // (AppointmentModal dispatches this event on success), without a page reload.
+  useEffect(() => {
+    window.addEventListener('appointments:changed', loadNotifications)
+    return () => window.removeEventListener('appointments:changed', loadNotifications)
+  }, [loadNotifications])
 
   useEffect(() => {
     const handler = (e) => {

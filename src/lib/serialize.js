@@ -3,5 +3,7 @@
 export function serializePsychologist(p) {
   if (!p) return null
   const idStr = String(p.id)
-  return { ...p, id: p.id, documentId: idStr, strapiId: idStr }
+  // Never expose the owner's email (personal data) in public API responses.
+  const { user_email, ...safe } = p
+  return { ...safe, id: p.id, documentId: idStr, strapiId: idStr }
 }

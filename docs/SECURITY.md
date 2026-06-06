@@ -29,16 +29,20 @@ Endpoints that require a valid session:
 
 | Endpoint | Notes |
 |---|---|
-| `POST /api/toggle-favorite` | Toggles a favorite for the logged-in user |
+| `POST /api/psychologists/:id/toggle-favorite` | Toggles a favorite for the logged-in user |
+| `POST /api/psychologists/:id/reviews` | Adding a review requires login (prevents anonymous rating manipulation) |
+| `POST /api/psychologists` (apply) | Application requires login; `user_email` is taken from the session, not the request body |
 | `POST /api/appointments` | Booking requires login |
-| `GET /api/appointments` / `GET /api/appointments/mine` | Returns the user's own appointments |
+| `GET /api/appointments/mine` | Returns the user's own appointments |
 | `DELETE /api/appointments/:id` (cancel) | Also checks `appt.email === session.user.email` (returns `403` otherwise) |
 | `GET /api/me` | Current user profile |
 | `DELETE /api/me` | Account deletion (cascade — see below) |
 | `POST /api/reviews/dismiss` | Dismisses a review for the logged-in user |
 
 - **Ownership check:** cancelling an appointment verifies the appointment's `email` matches the session user's email before deleting, so a logged-in user cannot cancel someone else's appointment.
-- **Cascade delete:** `DELETE /api/me` first deletes all of the user's appointments (`deleteMany` by email), then deletes the user record.
+- **No email spoofing:** the apply endpoint derives `user_email` from the session, so a client cannot bind a profile to someone else's address.
+- **Data minimisation:** `src/lib/serialize.js` strips `user_email` from every public psychologist response, so profile owners' emails are never exposed.
+- **Cascade delete:** `DELETE /api/me` deletes all of the user's appointments (`deleteMany` by email) **and any psychologist profile they created** (`deleteMany` by `user_email`), then deletes the user record — full GDPR erasure.
 
 ### Route protection (frontend)
 
@@ -103,7 +107,8 @@ These protections are **unchanged** from the previous model:
 - **Cookie consent banner** shown on first visit.
 - **`/privacy`** page describing data handling.
 - **Consent checkboxes** on forms that collect personal data.
-- **Right to erasure:** users can delete their account, now via **`DELETE /api/me`**, which cascades to remove their appointments as well.
+- **Right to erasure:** users can delete their account, now via **`DELETE /api/me`**, which cascades to remove their appointments **and any psychologist profile they created**, leaving no personal data behind.
+- **`/privacy`** lists the actual data processors (**Neon** — EU/Frankfurt — and **Vercel**) and clarifies that only strictly-necessary session/CSRF cookies are used (no consent legally required).
 
 ---
 
