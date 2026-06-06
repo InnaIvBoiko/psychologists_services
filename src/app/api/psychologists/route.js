@@ -2,16 +2,13 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { serializePsychologist } from '@/lib/serialize'
+import { getPublishedPsychologists } from '@/lib/queries'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/psychologists — full published list (filtering/sorting happen client-side).
 export async function GET() {
-  const list = await prisma.psychologist.findMany({
-    where: { published: true },
-    orderBy: { id: 'asc' },
-  })
-  return NextResponse.json(list.map(serializePsychologist))
+  return NextResponse.json(await getPublishedPsychologists())
 }
 
 // POST /api/psychologists — psychologist application, created UNPUBLISHED (hidden from the list).

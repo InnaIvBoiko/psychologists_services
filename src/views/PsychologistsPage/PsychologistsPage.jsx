@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import PsychologistCard from '../../components/PsychologistCard/PsychologistCard.jsx'
 import { getPsychologists } from '@/lib/api'
@@ -27,24 +29,23 @@ function applyFilter(list, filter) {
   }
 }
 
-export default function PsychologistsPage() {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
+export default function PsychologistsPage({ initialPsychologists = [] }) {
+  const [data, setData] = useState(initialPsychologists)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [dropOpen, setDropOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [toast, setToast] = useState(null)
 
+  // The list is server-rendered (passed as initialPsychologists); we only
+  // refetch on the client after a review is submitted, to refresh ratings.
   useEffect(() => {
-    async function fetchData() {
+    async function refetch() {
       const psychologists = await getPsychologists()
       setData(psychologists)
-      setLoading(false)
     }
-    fetchData()
-    window.addEventListener('psy:review-submitted', fetchData)
-    return () => window.removeEventListener('psy:review-submitted', fetchData)
+    window.addEventListener('psy:review-submitted', refetch)
+    return () => window.removeEventListener('psy:review-submitted', refetch)
   }, [])
 
   const searched = search.trim()
@@ -117,11 +118,7 @@ export default function PsychologistsPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className={styles.loaderWrap}>
-            <div className={styles.spinner} />
-          </div>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className={styles.empty}>No psychologists match this filter.</p>
         ) : (
           <div className={styles.list}>
