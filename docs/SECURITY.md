@@ -64,6 +64,7 @@ Booking an appointment requires login. Unauthenticated users hitting protected r
 |---|---|---|
 | `DATABASE_URL` | Vercel env vars | **Server-side only**, never shipped to the browser |
 | `AUTH_SECRET` | Vercel env vars | **Server-side only** — signs/verifies the session cookie |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Vercel env vars | **Server-side only** — backs anti brute-force rate limiting. Optional: if unset, rate limiting is disabled (no-op) and the app still works. |
 
 `.env` files are listed in `.gitignore` and are never committed.
 
@@ -87,8 +88,8 @@ The frontend holds no API tokens, secrets, or admin credentials. All privileged 
 
 Validation happens in the Next.js route handlers, for example:
 
-- **Register** (`src/app/api/register/route.js`): required fields, `username` length ≥ 3, email must contain `@`, `password` length ≥ 6, and a duplicate-email check returning `409`.
-- **Reviews:** rating is clamped to the **1–5** range.
+- **Register** (`src/app/api/register/route.js`): required fields, `username` length ≥ 3, email must contain `@`, `password` length ≥ 8, and a duplicate-email check returning `409`.
+- **Reviews:** rating is clamped to the **1–5** range. A review is rejected with `403` unless the session user has booked the psychologist (matched by session email) — only patients who had an appointment can review.
 - Emails are normalized (lowercased, trimmed) before lookup/storage to avoid duplicate or mismatched accounts.
 - Numeric path params (e.g. appointment `id`) are validated with `Number.isFinite` before use.
 
@@ -129,8 +130,22 @@ Watch security advisories for the key auth/data dependencies: **Auth.js / NextAu
 
 | Issue | Impact | Mitigation |
 |---|---|---|
-| No rate limiting on auth endpoints | Brute-force login attempts possible | Add rate limiting (middleware) or a WAF in front |
 | `psy_favorites` / `psy_dismissed_reviews` stored as plain JSON on the user | No integrity check | Acceptable for this use case; validated by the toggle/dismiss endpoints |
+| Guest appointments are not tied to an account | A guest cannot later track/cancel their booking; the email is self-reported | By design (low-friction booking); rate-limited per IP, and the UI nudges guests to register |
+
+### Rate limiting
+
+Login, registration and appointment creation are rate-limited per client IP via
+**Upstash Redis** (`src/lib/rateLimit.js`) to blunt brute-force and spam:
+
+| Endpoint | Limit |
+|---|---|
+| `authorize()` (login) | 5 attempts / minute |
+| `POST /api/register` | 3 sign-ups / 10 minutes |
+| `POST /api/appointments` | 5 bookings / hour |
+
+Limits are enforced only when `UPSTASH_REDIS_REST_URL` / `_TOKEN` are set; otherwise the
+limiter is a no-op so local dev and previews work without the external service.
 
 ---
 

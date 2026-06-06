@@ -36,6 +36,20 @@ export async function POST(req, { params }) {
     return NextResponse.json({ error: { message: 'Psychologist not found.' } }, { status: 404 })
   }
 
+  // Review integrity: only patients who actually booked this psychologist may review them.
+  // Appointments are matched by the logged-in user's email (same key as /api/appointments/mine),
+  // and store the psychologist id as a string.
+  const hasAppointment = await prisma.appointment.findFirst({
+    where: { email: session.user.email, psychologist_id: String(id) },
+    select: { id: true },
+  })
+  if (!hasAppointment) {
+    return NextResponse.json(
+      { error: { message: 'You can only review a psychologist you have booked an appointment with.' } },
+      { status: 403 }
+    )
+  }
+
   const reviews = Array.isArray(psychologist.reviews) ? psychologist.reviews : []
   const newReview = {
     reviewer: String(reviewer).trim(),

@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(req) {
+  const { success } = await rateLimit('register', getClientIp(req))
+  if (!success) {
+    return NextResponse.json(
+      { error: { message: 'Too many sign-up attempts. Please try again later.' } },
+      { status: 429 }
+    )
+  }
+
   let body
   try {
     body = await req.json()
@@ -20,8 +29,8 @@ export async function POST(req) {
   if (!email || !email.includes('@')) {
     return NextResponse.json({ error: { message: 'A valid email is required' } }, { status: 400 })
   }
-  if (password.length < 6) {
-    return NextResponse.json({ error: { message: 'Password must be at least 6 characters' } }, { status: 400 })
+  if (password.length < 8) {
+    return NextResponse.json({ error: { message: 'Password must be at least 8 characters' } }, { status: 400 })
   }
 
   const existing = await prisma.user.findUnique({ where: { email } })

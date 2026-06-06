@@ -30,9 +30,9 @@ In the tables below, 🔒 marks endpoints that require a logged-in session.
 | POST   | `/api/psychologists` | 🔒 | Psychologist application (created unpublished) |
 | GET    | `/api/psychologists/:id` | — | Single psychologist |
 | POST   | `/api/psychologists/:id/toggle-favorite` | 🔒 | Add/remove favorite |
-| POST   | `/api/psychologists/:id/reviews` | 🔒 | Append review, recompute average rating |
+| POST   | `/api/psychologists/:id/reviews` | 🔒 | Append review (only if the user booked this psychologist), recompute average rating |
 | GET    | `/api/appointments?psychologist_id=&date=` | — | Booked `HH:MM` slots for a day |
-| POST   | `/api/appointments` | 🔒 | Create a booking |
+| POST   | `/api/appointments` | — | Create a booking (guests allowed; rate-limited per IP) |
 | GET    | `/api/appointments/mine` | 🔒 | Current user's appointments |
 | DELETE | `/api/appointments/:id` | 🔒 | Cancel own appointment |
 | GET    | `/api/me` | 🔒 | Current user profile |
@@ -64,8 +64,9 @@ POST /api/register
 }
 ```
 
-Validates the input (username ≥ 3 chars, valid email, password ≥ 6 chars), hashes the
-password with bcrypt and creates a `User` row.
+Validates the input (username ≥ 3 chars, valid email, password ≥ 8 chars), hashes the
+password with bcrypt and creates a `User` row. Rate-limited per IP (anti brute-force) —
+returns `429` when the limit is exceeded.
 
 **Response**
 ```json
@@ -195,6 +196,10 @@ POST /api/psychologists/:id/reviews
 ```
 
 🔒 **Requires a logged-in session.** `:id` is the numeric primary key.
+
+**Review integrity.** The handler returns `403` unless the session user has at least one
+`Appointment` with this psychologist (matched by the session email, the same key used by
+`/api/appointments/mine`). This prevents reviews from people who never booked.
 
 **Body**
 ```json
@@ -327,7 +332,7 @@ vs. past:
 
 ---
 
-### Create appointment 🔒
+### Create appointment
 
 ```
 POST /api/appointments
@@ -347,7 +352,9 @@ POST /api/appointments
 ```
 
 All fields except `comment` are required. Returns the created appointment plus a
-`documentId`. Requires a logged-in session.
+`documentId`. **No login required** — guests can book (the modal shows a "Send as a guest"
+button). Logged-in users can additionally track and cancel their bookings via `/mine`.
+Rate-limited per IP (returns `429` when exceeded) since the endpoint is public.
 
 > **Before (Strapi).** Same path but the body was wrapped in `{ "data": { ... } }`, and the
 > endpoint was open according to the Strapi role configuration rather than gated on a session.

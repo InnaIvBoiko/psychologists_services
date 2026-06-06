@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma.js'
 import { isAdminEmail } from './admin.js'
+import { rateLimit, getClientIp } from './rateLimit.js'
 
 // Auth.js v5 — email/password via Credentials, JWT session strategy (no adapter tables needed).
 // Sessions are stored in a secure cookie, so the login persists across page reloads.
@@ -15,10 +16,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      authorize: async (credentials) => {
+      authorize: async (credentials, request) => {
         const email = String(credentials?.email || '').toLowerCase().trim()
         const password = String(credentials?.password || '')
         if (!email || !password) return null
+
+        // Anti brute-force: cap login attempts per client IP.
+        const { success } = await rateLimit('login', getClientIp(request))
+        if (!success) return null
 
         const user = await prisma.user.findUnique({ where: { email } })
         if (!user) return null

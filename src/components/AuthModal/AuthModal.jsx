@@ -23,7 +23,8 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
     if (!email.trim()) errs.email = 'Email is required'
     else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
     if (!password) errs.password = 'Password is required'
-    else if (password.length < 6) errs.password = 'Password must be at least 6 characters'
+    // Min length is a registration policy; don't lock out existing accounts on login.
+    else if (!isLogin && password.length < 8) errs.password = 'Password must be at least 8 characters'
     if (!isLogin && !consent) errs.consent = 'You must accept the Privacy Policy to register'
     return errs
   }
