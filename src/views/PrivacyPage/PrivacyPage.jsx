@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <section className={styles.section}>
           <h2>1. Introduction</h2>
           <p>
-            Psychologists.Services ("we", "us", or "our") is committed to protecting your personal data.
+            Psychologists.Services (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is committed to protecting your personal data.
             This Privacy Policy explains what information we collect, why we collect it, and how we use it
             when you use our platform at <strong>psychologists-services-98v1.vercel.app</strong>.
           </p>
