@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma.js'
+import { isAdminEmail } from './admin.js'
 
 // Auth.js v5 — email/password via Credentials, JWT session strategy (no adapter tables needed).
 // Sessions are stored in a secure cookie, so the login persists across page reloads.
@@ -42,6 +43,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.uid
         session.user.username = token.username
+        // Derived from the env allowlist (token.email is set by Auth.js by default).
+        session.user.isAdmin = isAdminEmail(token.email)
       }
       return session
     },

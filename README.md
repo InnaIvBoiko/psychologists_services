@@ -2,6 +2,10 @@
 
 **Live demo:** [psychologists-services-98v1.vercel.app](https://psychologists-services-98v1.vercel.app)
 
+> **Demo admin login** — to try the moderation tools (publish / edit / delete applications), log in with:
+> **`admin@example.com`** · **`Password123!`** — then open the **Admin** link in the header.
+> The login window also has a one-click **Fill in** button for these credentials.
+
 A full-stack web application to browse and book sessions with licensed psychologists. Built as a **single Next.js app** (React UI + API routes + Auth.js) with **Prisma** over a **Neon PostgreSQL** database, deployed on **Vercel**.
 
 > **Note (June 2026):** the backend was migrated **from Strapi v5 to Next.js + Prisma + Neon + Auth.js**. The user-facing app is unchanged. See [Migration: from Strapi to Next.js](#migration-from-strapi-to-nextjs) for what changed and why.
@@ -19,6 +23,7 @@ A full-stack web application to browse and book sessions with licensed psycholog
 - **Authentication** — Register and log in with email/password via **Auth.js** (cookie session, login persists across reloads)
 - **Notification Bell** — View upcoming appointments directly in the header
 - **Apply as Psychologist** — Submit a professional application including availability schedule; saved **unpublished** (hidden from the list) pending approval
+- **Admin Approval** — An admin (email allowlist via `ADMIN_EMAILS`) can review applications on `/admin`: **publish/unpublish**, edit any field, or delete a profile
 - **404 Page** — Custom not-found page
 - **Privacy & GDPR** — Cookie consent banner, Privacy Policy page (`/privacy`), consent checkboxes on registration and application forms
 - **Right to Erasure** — Logged-in users can permanently delete their account and all associated data via the user menu
@@ -142,6 +147,7 @@ cp .env.example .env
 Fill in `.env` (see [Environment Variables](#environment-variables)):
 - `DATABASE_URL` — your Neon **pooled** connection string
 - `AUTH_SECRET` — generate with `npx auth secret`
+- `ADMIN_EMAILS` — comma-separated emails allowed into `/admin` (must match a registered account)
 
 ### 3. Create the database schema & seed data
 ```bash
@@ -167,6 +173,9 @@ AUTH_SECRET="a-long-random-string"
 
 # AUTH_URL is set automatically by Vercel; only needed for some custom hosts
 # AUTH_URL="https://your-app.vercel.app"
+
+# Admin allowlist — comma-separated emails that may access /admin (publish/edit/delete applications)
+ADMIN_EMAILS="admin@example.com"
 ```
 
 > Unlike the old Vite setup (which baked `VITE_*` vars at build time), these are read **at runtime** on the server, so the database URL and secret never reach the browser.
@@ -253,7 +262,7 @@ Handled by **Auth.js v5** (`src/lib/auth.js`):
 
 1. Push to GitHub.
 2. Import the repository in [Vercel](https://vercel.com) (Next.js is auto-detected).
-3. Add environment variables: `DATABASE_URL`, `AUTH_SECRET`.
+3. Add environment variables: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAILS`.
 4. Deploy. The build runs `prisma generate && next build`.
 5. First time only: run `npm run db:push` and `npm run db:seed` against the Neon database (locally with the production `DATABASE_URL`, or via the Neon SQL editor).
 

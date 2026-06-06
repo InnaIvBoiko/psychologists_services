@@ -81,6 +81,16 @@ export default function Header() {
                 Favorites
               </NavLink>
             )}
+            {user?.isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `${styles.navLink} ${isActive ? styles.active : ''}`
+                }
+              >
+                Admin
+              </NavLink>
+            )}
           </nav>
 
           {/* Desktop actions */}
@@ -178,6 +188,17 @@ export default function Header() {
                   onClick={closeMenu}
                 >
                   Favorites
+                </NavLink>
+              )}
+              {user?.isAdmin && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `${styles.mobileNavLink} ${isActive ? styles.active : ''}`
+                  }
+                  onClick={closeMenu}
+                >
+                  Admin
                 </NavLink>
               )}
             </nav>

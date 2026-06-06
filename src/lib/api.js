@@ -166,6 +166,25 @@ export const submitPsychologistApplication = async (data) => {
   }
 }
 
+// --- ADMIN ---
+// All admin endpoints are guarded server-side (403 for non-admins); these are thin wrappers.
+export const getAdminPsychologists = async () => {
+  try {
+    return await getJson('/api/admin/psychologists')
+  } catch (error) {
+    console.error('Error fetching admin psychologists:', error.message)
+    return []
+  }
+}
+
+export const updatePsychologistAdmin = async (id, data) => {
+  return sendJson(`/api/admin/psychologists/${id}`, 'PATCH', data)
+}
+
+export const deletePsychologistAdmin = async (id) => {
+  return sendJson(`/api/admin/psychologists/${id}`, 'DELETE')
+}
+
 // --- BOOKING ---
 export const getBookedSlots = async (psychologistId, date) => {
   if (!date) return []

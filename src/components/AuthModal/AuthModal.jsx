@@ -60,6 +60,20 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
             : 'Create your account to access all features.'}
         </p>
 
+        {isLogin && (
+          <div className={styles.demoBox}>
+            <span className={styles.demoTitle}>🔑 Demo admin — try the publish / edit / delete tools</span>
+            <code className={styles.demoCreds}>admin@example.com · Password123!</code>
+            <button
+              type="button"
+              className={styles.demoFill}
+              onClick={() => { setEmail('admin@example.com'); setPassword('Password123!') }}
+            >
+              Fill in
+            </button>
+          </div>
+        )}
+
         {serverError && <p className={styles.serverError}>{serverError}</p>}
 
         <form onSubmit={handleSubmit} className={styles.form} noValidate>

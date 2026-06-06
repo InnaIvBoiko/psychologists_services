@@ -7,3 +7,11 @@ export function serializePsychologist(p) {
   const { user_email, ...safe } = p
   return { ...safe, id: p.id, documentId: idStr, strapiId: idStr }
 }
+
+// Admin-only serializer: keeps `user_email` and `published` so the moderation UI can
+// show the owner and the review status. Only ever returned from admin-guarded routes.
+export function serializePsychologistAdmin(p) {
+  if (!p) return null
+  const idStr = String(p.id)
+  return { ...p, id: p.id, documentId: idStr, strapiId: idStr }
+}
