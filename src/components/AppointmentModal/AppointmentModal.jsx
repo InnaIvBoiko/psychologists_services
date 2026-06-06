@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { createAppointment, getBookedSlots } from '../../strapi/strapi.js'
+import { createAppointment, getBookedSlots } from '@/lib/api'
 import { generateSlots, isWorkingDay } from '../../utils/availability.js'
 import Modal from '../Modal/Modal.jsx'
 import AuthModal from '../AuthModal/AuthModal.jsx'

@@ -2,7 +2,9 @@
 
 **Live demo:** [psychologists-services-98v1.vercel.app](https://psychologists-services-98v1.vercel.app)
 
-A full-stack web application to browse and book sessions with licensed psychologists. Built with React + Vite on the frontend and Strapi v5 on the backend, deployed on Vercel and Strapi Cloud.
+A full-stack web application to browse and book sessions with licensed psychologists. Built as a **single Next.js app** (React UI + API routes + Auth.js) with **Prisma** over a **Neon PostgreSQL** database, deployed on **Vercel**.
+
+> **Note (June 2026):** the backend was migrated **from Strapi v5 to Next.js + Prisma + Neon + Auth.js**. The user-facing app is unchanged. See [Migration: from Strapi to Next.js](#migration-from-strapi-to-nextjs) for what changed and why.
 
 ---
 
@@ -14,9 +16,9 @@ A full-stack web application to browse and book sessions with licensed psycholog
 - **Book Appointments** — Pick a date with the built-in calendar, select an available time slot, and submit a booking
 - **Slot Availability** — Already-booked time slots are disabled; non-working days are greyed out in the calendar
 - **Psychologist Working Hours** — Each psychologist defines their own schedule (days, hours, session duration); slots are generated dynamically from that schedule
-- **Authentication** — Register and log in via Strapi Users & Permissions (JWT)
+- **Authentication** — Register and log in with email/password via **Auth.js** (cookie session, login persists across reloads)
 - **Notification Bell** — View upcoming appointments directly in the header
-- **Apply as Psychologist** — Submit a professional application including availability schedule; an account is created automatically if the applicant is not yet registered; saved as **draft** pending admin approval
+- **Apply as Psychologist** — Submit a professional application including availability schedule; saved **unpublished** (hidden from the list) pending approval
 - **404 Page** — Custom not-found page
 - **Privacy & GDPR** — Cookie consent banner, Privacy Policy page (`/privacy`), consent checkboxes on registration and application forms
 - **Right to Erasure** — Logged-in users can permanently delete their account and all associated data via the user menu
@@ -25,29 +27,55 @@ A full-stack web application to browse and book sessions with licensed psycholog
 
 ## Tech Stack
 
-### Frontend
-| Technology | Version |
+| Layer | Technology |
 |---|---|
-| React | 18 |
-| React Router | 6 |
-| Vite | 5 |
-| Axios | 1.x |
-| CSS Modules | — |
+| Framework | **Next.js 14** (App Router) — UI **and** API in one project |
+| UI | React 18, CSS Modules |
+| Auth | **Auth.js v5** (NextAuth) — Credentials provider, JWT session, `bcryptjs` |
+| ORM | **Prisma 5** |
+| Database | **Neon** (serverless PostgreSQL) |
+| Hosting | **Vercel** (single deployment) |
+| Tests | Vitest + Testing Library |
 
-### Backend
-| Technology | Version |
-|---|---|
-| Strapi | 5.39.0 |
-| PostgreSQL | (production) |
-| SQLite | (local dev) |
-| Node.js | ≥20 ≤24 |
+### Previous stack (before migration)
 
-### Infrastructure
-| Service | Purpose |
+| Layer | Technology |
 |---|---|
-| Vercel | Frontend hosting + SPA routing |
-| Strapi Cloud | Backend hosting + managed PostgreSQL |
-| UptimeRobot | Uptime monitoring — keeps Strapi Cloud awake on the free tier |
+| Frontend | React 18 + **Vite 5** + React Router 6 + Axios |
+| Backend | **Strapi v5** (Users & Permissions, custom controllers) |
+| Database | PostgreSQL (Strapi Cloud) / SQLite (local) |
+| Hosting | Vercel (frontend) + **Strapi Cloud** (backend) |
+| Keep-alive | **UptimeRobot** ping every 5 min to fight cold starts |
+
+---
+
+## Migration: from Strapi to Next.js
+
+### Why
+The app is a portfolio/CV project with no revenue, but the Strapi Cloud backend was the **only paid/maintenance burden**: the free tier **slept after inactivity** (~20–30s cold start) and needed an external UptimeRobot ping to stay awake. The goal was: **€0, no maintenance, no slow wake-ups**, while keeping the exact same UI.
+
+### Before → After
+
+| Concern | Before (Strapi) | After (Next.js + Neon) |
+|---|---|---|
+| Deployments | 2 (Vercel + Strapi Cloud) | **1** (Vercel only) |
+| Cold start | ~20–30s, needed UptimeRobot | **~0.5s** Neon resume, no pinger |
+| CORS | Cross-domain frontend↔backend | **None** (same origin) |
+| Auth | Strapi JWT, in-memory (logout on reload) | **Auth.js cookie session** (login persists) |
+| Backend code | Strapi controllers/routes/schemas | Next.js **Route Handlers** + Prisma |
+| Cost / upkeep | Backend hosting + keep-alive | **€0**, zero maintenance |
+
+### What stayed the same
+- All React components and CSS Modules (`src/components`, `src/views`)
+- The booking/calendar/availability logic (`src/utils/availability.js`)
+- The data **shapes** the UI consumes (snake_case fields, `documentId`, favorites/reviews as JSON arrays) — so the UI barely changed.
+
+### What changed under the hood
+- `src/strapi/strapi.js` (Axios → Strapi) → **`src/lib/api.js`** (same-origin `fetch`, identical function signatures).
+- React Router → Next.js App Router, via a tiny compatibility shim (`src/lib/router.jsx`) so existing `<Link>`/`useNavigate` call sites only changed their import path.
+- `src/pages/` → **`src/views/`** (the name `pages/` collides with Next.js routing).
+- Strapi content types → **Prisma models** (`prisma/schema.prisma`).
+- Strapi custom controllers → **API route handlers** under `src/app/api/`.
 
 ---
 
@@ -55,45 +83,41 @@ A full-stack web application to browse and book sessions with licensed psycholog
 
 ```
 psychologists_services/
-├── backend/                    # Strapi CMS
-│   ├── src/
-│   │   ├── index.ts            # Custom routes (delete-account endpoint)
-│   │   ├── api/
-│   │   │   ├── appointment/    # Appointment content type
-│   │   │   └── psychologist/   # Psychologist content type + custom routes
-│   │   └── extensions/         # Users & Permissions extension (psy_favorites, psy_dismissed_reviews)
-│   ├── config/
-│   │   ├── middlewares.ts      # CORS configuration
-│   │   └── server.ts           # Host/port config
-│   └── .env.example
-├── src/                        # React frontend
-│   ├── components/
-│   │   ├── AppointmentModal/   # Booking modal with calendar
-│   │   ├── ApplyModal/         # Psychologist application form (auto-creates user account)
-│   │   ├── AuthModal/          # Login / Register modal
-│   │   ├── CookieBanner/       # GDPR cookie consent banner
-│   │   ├── DeleteAccountModal/ # Account deletion confirmation modal
-│   │   ├── Header/             # Header + NotificationBell + user dropdown
-│   │   ├── Modal/              # Base modal wrapper
-│   │   └── PsychologistCard/   # Card with expand/book/favorite
-│   ├── context/
-│   │   └── AuthContext.jsx     # Auth state (user, token, login, logout, deleteAccount)
-│   ├── hooks/
-│   │   └── useFavorites.js     # Favorites logic
-│   ├── pages/
-│   │   ├── HomePage/
-│   │   ├── PsychologistsPage/
-│   │   ├── FavoritesPage/
-│   │   ├── PrivacyPage/        # Privacy Policy (/privacy)
-│   │   └── NotFoundPage/
-│   ├── strapi/
-│   │   └── strapi.js           # All API calls
-│   └── data/
-│       └── psychologists.json  # Seed data
-├── seed.js                     # Data seeding script
-├── vercel.json                 # Build config + SPA rewrite
-├── .env.example
-└── package.json
+├── prisma/
+│   ├── schema.prisma          # User, Psychologist, Appointment models
+│   └── seed.js                # Seeds Neon from src/data/psychologists.json
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── layout.jsx         # Root layout (fonts, metadata)
+│   │   ├── providers.jsx      # SessionProvider + AuthProvider + Header/Footer/CookieBanner
+│   │   ├── page.jsx           # Home  ("/")
+│   │   ├── psychologists/     # "/psychologists"
+│   │   ├── favorites/         # "/favorites" (protected: redirects if logged out)
+│   │   ├── privacy/           # "/privacy"
+│   │   ├── not-found.jsx      # 404
+│   │   └── api/               # Backend (Route Handlers) — see API Overview
+│   │       ├── auth/[...nextauth]/   # Auth.js login/session
+│   │       ├── register/             # Email/password sign-up
+│   │       ├── me/                   # Profile (favorites, dismissed, isPsychologist) + delete account
+│   │       ├── psychologists/        # List, application, detail, toggle-favorite, reviews
+│   │       ├── appointments/         # Booked slots, create, mine, cancel
+│   │       └── reviews/dismiss/      # Dismiss a review prompt
+│   ├── lib/
+│   │   ├── api.js             # Frontend data layer (same-origin fetch)
+│   │   ├── auth.js            # Auth.js config (Credentials + JWT session)
+│   │   ├── prisma.js          # PrismaClient singleton
+│   │   ├── router.jsx         # react-router → next/navigation shim
+│   │   └── serialize.js       # Adds id/documentId/strapiId to psychologist responses
+│   ├── components/           # UI components (unchanged from before)
+│   ├── views/                # Page bodies (formerly src/pages/)
+│   ├── context/AuthContext.jsx  # Same context shape, now backed by Auth.js
+│   ├── hooks/useFavorites.js
+│   ├── utils/availability.js # Slot/working-hours logic (unchanged)
+│   └── data/psychologists.json  # Seed data
+├── next.config.js
+├── jsconfig.json             # "@/*" → ./src/*
+├── vitest.config.js          # Vitest runs the test suite (app builds with Next)
+└── .env.example
 ```
 
 ---
@@ -101,212 +125,139 @@ psychologists_services/
 ## Getting Started
 
 ### Prerequisites
+- Node.js ≥ 18
+- A free [Neon](https://neon.tech) account (PostgreSQL)
 
-- Node.js ≥20
-- npm or yarn
-
-### 1. Clone the repository
-
+### 1. Clone & install
 ```bash
 git clone https://github.com/your-username/psychologists_services.git
 cd psychologists_services
+npm install            # also runs `prisma generate`
 ```
 
-### 2. Set up the backend
-
+### 2. Configure environment
 ```bash
-cd backend
 cp .env.example .env
-# Fill in the values in .env (see Environment Variables section)
-npm install
-npm run dev
 ```
+Fill in `.env` (see [Environment Variables](#environment-variables)):
+- `DATABASE_URL` — your Neon **pooled** connection string
+- `AUTH_SECRET` — generate with `npx auth secret`
 
-The Strapi admin panel will be available at `http://localhost:1337/admin`.
-
-### 3. Set up the frontend
-
+### 3. Create the database schema & seed data
 ```bash
-# In the root directory
-cp .env.example .env
-# Set VITE_STRAPI_URL=http://localhost:1337
-npm install
-npm run dev
+npm run db:push      # create tables in Neon from prisma/schema.prisma
+npm run db:seed      # import the 15 psychologists from src/data/psychologists.json
 ```
 
-The app will be available at `http://localhost:5173`.
-
-### 4. Seed the database (optional)
-
-After Strapi is running:
-
+### 4. Run
 ```bash
-node seed.js
+npm run dev          # http://localhost:3000
 ```
-
-This imports all psychologists from `src/data/psychologists.json` into Strapi.
 
 ---
 
 ## Environment Variables
 
-### Frontend (`.env`)
-
 ```env
-VITE_STRAPI_URL=http://localhost:1337
+# Neon — use the POOLED connection string from the Neon dashboard
+DATABASE_URL="postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
+
+# Auth.js — generate with: npx auth secret
+AUTH_SECRET="a-long-random-string"
+
+# AUTH_URL is set automatically by Vercel; only needed for some custom hosts
+# AUTH_URL="https://your-app.vercel.app"
 ```
 
-> On Vercel, add this in **Settings → Environment Variables** and redeploy. Vite bakes env vars at build time — the variable is not read at runtime.
-
-### Backend (`backend/.env`)
-
-```env
-HOST=0.0.0.0
-PORT=1337
-APP_KEYS=
-API_TOKEN_SALT=
-ADMIN_JWT_SECRET=
-TRANSFER_TOKEN_SALT=
-ENCRYPTION_KEY=
-JWT_SECRET=
-
-# SQLite (local)
-DATABASE_CLIENT=sqlite
-DATABASE_FILENAME=.tmp/data.db
-
-# PostgreSQL (production)
-# DATABASE_CLIENT=postgres
-# DATABASE_HOST=
-# DATABASE_PORT=5432
-# DATABASE_NAME=
-# DATABASE_USERNAME=
-# DATABASE_PASSWORD=
-# DATABASE_SSL=true
-```
+> Unlike the old Vite setup (which baked `VITE_*` vars at build time), these are read **at runtime** on the server, so the database URL and secret never reach the browser.
 
 ---
 
 ## API Overview
 
-All requests go through `src/strapi/strapi.js`.
+All endpoints live under `src/app/api/` and are called from `src/lib/api.js` (same-origin `fetch`; the Auth.js session cookie is sent automatically). Endpoints marked 🔒 require a logged-in session.
 
-| Function | Method | Endpoint |
+| Function (`src/lib/api.js`) | Method | Endpoint |
 |---|---|---|
-| `getPsychologists()` | GET | `/api/psychologists` (pages through all results — filters are client-side) |
+| `getPsychologists()` | GET | `/api/psychologists` |
 | `getPsychologistById(id)` | GET | `/api/psychologists/:id` |
-| `checkIsUserPsychologist(email)` | GET | `/api/psychologists?filters[user_email][$eq]=...` |
-| `togglePsychologistFavorite(id, jwt)` | POST | `/api/psychologists/:id/toggle-favorite` |
-| `addReview(id, review, jwt)` | POST | `/api/psychologists/:id/add-review` |
-| `getUserFavorites(jwt)` | GET | `/api/users/me` |
-| `getBookedSlots(psychId, date, jwt)` | GET | `/api/appointments?filters...` |
-| `createAppointment(data, jwt)` | POST | `/api/appointments` |
-| `getUserAppointments(email, jwt)` | GET | `/api/appointments?filters...` |
-| `cancelAppointment(documentId, jwt)` | DELETE | `/api/appointments/:id` |
-| `submitPsychologistApplication(data, jwt)` | POST | `/api/psychologists?status=draft` |
-| `deleteAccount(jwt)` | DELETE | `/api/users/me/delete-account` |
+| `submitPsychologistApplication(data)` | POST | `/api/psychologists` (created unpublished) |
+| `togglePsychologistFavorite(id)` 🔒 | POST | `/api/psychologists/:id/toggle-favorite` |
+| `addReview(id, review)` | POST | `/api/psychologists/:id/reviews` |
+| `getBookedSlots(psychId, date)` | GET | `/api/appointments?psychologist_id=&date=` |
+| `createAppointment(data)` 🔒 | POST | `/api/appointments` |
+| `getUserAppointments()` 🔒 | GET | `/api/appointments/mine` |
+| `getPastAppointmentsForReview()` 🔒 | GET | `/api/appointments/mine` |
+| `cancelAppointment(id)` 🔒 | DELETE | `/api/appointments/:id` |
+| `getUserFavorites()` 🔒 | GET | `/api/me` |
+| `getDismissedReviews()` 🔒 | GET | `/api/me` |
+| `checkIsUserPsychologist()` 🔒 | GET | `/api/me` |
+| `dismissAppointmentReview(id)` 🔒 | POST | `/api/reviews/dismiss` |
+| `deleteAccount()` 🔒 | DELETE | `/api/me` |
+| Login | POST | `/api/auth/callback/credentials` (via Auth.js `signIn`) |
+| Register | POST | `/api/register` |
 
 ---
 
 ## Data Models
 
-### Psychologist
+Prisma models (`prisma/schema.prisma`) intentionally keep the **snake_case field names** the UI already used (inherited from Strapi), so API responses are a direct spread.
 
+### Psychologist
 | Field | Type | Notes |
 |---|---|---|
-| name | String | |
-| surname | String | |
-| avatar | String | URL or emoji |
-| specialization | String | |
-| experience | Integer | Years |
-| license | String | |
-| price_per_hour | Decimal | |
-| rating | Decimal | |
-| initial_consultation | String | Free / paid |
-| about | Text | |
-| reviews | JSON | Array of review objects |
-| popular | Boolean | |
-| isAvailable | Boolean | |
-| availability | JSON | Weekly schedule per day |
-| user_email | Email | Links profile to the user account that created it |
-
-> The `user_email` field is defined in `backend/src/api/psychologist/content-types/psychologist/schema.json` and is created automatically when the backend starts.
-
-Draft & Publish enabled — new applications submitted via the form are saved as **drafts** until an admin publishes them.
+| id | Int | Primary key; exposed also as `documentId`/`strapiId` strings |
+| name, surname, avatar | String | `avatar` is a plain remote URL |
+| specialization, license | String | |
+| experience | Int | Years |
+| price_per_hour, rating | Float | |
+| initial_consultation, about | String | |
+| reviews | Json | Array of `{ reviewer, rating, comment, date }` |
+| popular, isAvailable | Boolean | |
+| availability | Json | Weekly schedule per day |
+| user_email | String | Links profile to the account that created it |
+| published | Boolean | Applications start `false` (hidden); replaces Strapi draft/publish |
 
 ### Appointment
-
 | Field | Type | Notes |
 |---|---|---|
-| patient_name | String | |
-| email | String | |
-| phone | String | |
-| time_slot | String | Format: `"YYYY-MM-DD HH:MM"` |
-| psychologist_id | String | Strapi `documentId` |
+| patient_name, email, phone | String | |
+| time_slot | String | Format `"YYYY-MM-DD HH:MM"` (date filtering uses `contains`) |
+| psychologist_id | String | The psychologist's `documentId` |
 | psychologist_name | String | Denormalized |
-| comment | Text | Optional |
+| comment | String | Optional |
 
-> **Note:** `time_slot` stores both date and time as a single string. Date filtering uses the `$contains` operator.
-
-### User (extended)
-
-Standard Strapi users-permissions user with two additional JSON fields:
-
+### User
 | Field | Type | Notes |
 |---|---|---|
-| psy_favorites | JSON | Array of psychologist documentIds |
-| psy_dismissed_reviews | JSON | Array of appointment ids the user dismissed review prompts for |
-
----
-
-## Deployment
-
-### Frontend — Vercel
-
-1. Push to GitHub
-2. Import the repository in [Vercel](https://vercel.com)
-3. Add environment variable: `VITE_STRAPI_URL=https://your-strapi-app.strapiapp.com`
-4. Deploy — `vercel.json` handles SPA routing and build config automatically
-
-### Backend — Strapi Cloud
-
-1. Connect your GitHub repository to [Strapi Cloud](https://cloud.strapi.io)
-2. Set the root directory to `backend`
-3. Configure environment variables (database, secrets)
-4. Deploy
-
-### CORS
-
-Allowed origins are configured in `backend/config/middlewares.ts`:
-- `http://localhost:5173`
-- `https://psychologists-services-98v1.vercel.app`
-- All `https://psychologists-services-*.vercel.app` preview deployments
-
----
-
-## Uptime Monitoring
-
-Strapi Cloud free tier puts the instance to sleep after inactivity.
-**UptimeRobot** (free plan) pings the health endpoint every 5 minutes to prevent cold starts:
-
-```
-Monitor URL:  https://thankful-moonlight-dc4a61a084.strapiapp.com/_health
-Method:       GET
-Interval:     every 5 minutes
-Expected:     HTTP 204
-```
-
-> The 5-minute ping reduces — but does not fully eliminate — sleeping; a cold start can still take ~20–30s. The frontend API client tolerates this with a 45s timeout and automatic GET retries, so a sleeping backend does not break the first page load. A non-sleeping (paid) Strapi Cloud plan is the only definitive fix.
+| email | String | Unique |
+| username | String | Display name |
+| passwordHash | String | bcrypt hash (private) |
+| psy_favorites | Json | Array of psychologist ids |
+| psy_dismissed_reviews | Json | Array of appointment ids with dismissed review prompts |
 
 ---
 
 ## Authentication
 
-Authentication is handled by the **Strapi Users & Permissions** plugin.
+Handled by **Auth.js v5** (`src/lib/auth.js`):
+- **Register:** `POST /api/register` → hashes the password (`bcryptjs`) and creates the user.
+- **Login:** Credentials provider verifies the bcrypt hash and issues a **JWT session cookie**.
+- The session **persists across reloads** (improvement over the old in-memory Strapi JWT, which logged the user out on refresh).
+- Protected route (`/favorites`) redirects unauthenticated users to the home page.
+- `AuthContext` keeps the same public shape (`user`, `favorites`, `login`, `register`, `logout`, `deleteAccount`); `token` is retained as `null` for backward compatibility (auth is now cookie-based).
 
-- Register: `POST /api/auth/local/register`
-- Login: `POST /api/auth/local`
-- Returns a JWT token stored in React context (in-memory, not persisted to localStorage)
-- Protected routes (Favorites) redirect unauthenticated users to the home page
+---
+
+## Deployment — Vercel (single project)
+
+1. Push to GitHub.
+2. Import the repository in [Vercel](https://vercel.com) (Next.js is auto-detected).
+3. Add environment variables: `DATABASE_URL`, `AUTH_SECRET`.
+4. Deploy. The build runs `prisma generate && next build`.
+5. First time only: run `npm run db:push` and `npm run db:seed` against the Neon database (locally with the production `DATABASE_URL`, or via the Neon SQL editor).
+
+> No second backend deployment, no CORS config, and **no UptimeRobot** — Neon resumes from idle in ~0.5s, so cold starts are no longer noticeable.
 
 ---
 
@@ -314,12 +265,11 @@ Authentication is handled by the **Strapi Users & Permissions** plugin.
 
 | Feature | Implementation |
 |---|---|
-| Cookie consent | Banner shown on first visit; choice stored in `localStorage` as `cookie_consent` |
+| Cookie consent | Banner on first visit; choice stored in `localStorage` as `cookie_consent` |
 | Privacy Policy | Static page at `/privacy` |
 | Consent on registration | Required checkbox linking to `/privacy` |
-| Consent on psychologist application | Required checkbox with explicit data processing notice |
-| Right to erasure | User menu → Delete account → deletes all appointments and user record via `DELETE /api/users/me/delete-account` |
-| Psychologist offboarding | If the user has a linked psychologist profile, they are informed it will be removed within 2–3 business days |
+| Consent on psychologist application | Required checkbox with explicit data-processing notice |
+| Right to erasure | User menu → Delete account → `DELETE /api/me` removes all appointments and the user record |
 
 ---
 
@@ -330,6 +280,8 @@ npm run test          # watch mode
 npm run test:run      # single run
 npm run test:coverage # coverage report
 ```
+
+The suite (Vitest + Testing Library) runs against the React components and `AuthContext`, mocking `@/lib/api` and `next-auth/react`.
 
 ---
 

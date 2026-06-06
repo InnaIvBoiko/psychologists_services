@@ -2,6 +2,13 @@
 
 All components use CSS Modules for scoped styling. Each component lives in its own folder with a `.jsx` and `.module.css` file.
 
+> **Migration note (Strapi → Next.js).** The React components themselves are essentially unchanged, but a few shared dependencies moved:
+> - **Data layer:** components now import from `@/lib/api` (was `src/strapi/strapi.js`, an Axios client talking to Strapi). The function names and behavior are the same.
+> - **Routing:** components import `Link` / `NavLink` / `useNavigate` from `@/lib/router` (a thin shim over `next/navigation`) instead of `react-router-dom`. They are used exactly as before.
+> - **Page bodies:** the page components moved from `src/pages/` to `src/views/` (the name `pages/` collides with Next.js). Paths below reflect the new location.
+> - **Auth:** `AuthContext` keeps the same public API but is now backed by Auth.js (NextAuth) with cookie-based sessions. See the [AuthContext](#authcontext) note below.
+> - **App shell:** new top-level Next.js files exist — `src/app/layout.jsx` (root layout) and `src/app/providers.jsx` (wraps `SessionProvider` + `AuthProvider` + `Header` / `Footer` / `CookieBanner`).
+
 ---
 
 ## Header
@@ -32,7 +39,7 @@ Bell icon in the header showing upcoming appointments.
   - **Upcoming appointments** — doctor name, date, time; **Cancel** button shown if appointment is more than 24h away → opens `CancelModal`
   - **Rate your sessions** — past appointments (last 60 days) not yet reviewed or dismissed
 - Each pending review has a **★ Review** button (opens `ReviewModal`) and a **✕** dismiss button
-- Dismissed reviews are saved to Strapi (`psy_dismissed_reviews` on user) and filtered on load
+- Dismissed reviews are saved on the user (`psy_dismissed_reviews`) and filtered on load
 - Closes on outside click
 - Fetches via `getUserAppointments` + `getPastAppointmentsForReview` + `getDismissedReviews` on mount
 
@@ -65,7 +72,7 @@ Login / Registration modal.
 Card displaying a psychologist's information.
 
 **Features:**
-- Avatar (image from Strapi or emoji fallback)
+- Avatar — read from `psychologist.avatar` (a plain remote image URL)
 - Name, specialization, experience, rating (stars), price, initial consultation type
 - Heart button → toggles favorite (requires login)
 - "Read more" toggle → shows full `about` text + reviews
@@ -75,8 +82,10 @@ Card displaying a psychologist's information.
 
 | Prop | Type | Description |
 |---|---|---|
-| `psychologist` | `object` | Psychologist data from Strapi |
+| `psychologist` | `object` | Psychologist data (includes `avatar` as a remote URL) |
 | `onToast` | `(msg: string) => void` | Show a toast notification |
+
+> **Migration note.** The avatar is now read directly from `psychologist.avatar`. The previous code that built a URL from Strapi media (`psychologist.image?.url` combined with `VITE_STRAPI_URL`) has been removed.
 
 ---
 
@@ -254,23 +263,39 @@ Base modal overlay used by `AuthModal`, `AppointmentModal`, `ApplyModal`, and `R
 
 ---
 
+## AuthContext
+
+**Path:** `src/context/AuthContext.jsx`
+
+Provides authentication state and actions to the whole app via `useAuth()`. Consumed by `Header`, `NotificationBell`, `PsychologistCard`, `AppointmentModal`, and the protected pages.
+
+**Public API (unchanged):** `{ user, token, favorites, setFavorites, login, register, logout, deleteAccount }`.
+
+> **Migration note.** `AuthContext` keeps the same public API but is now backed by **Auth.js (NextAuth)** with cookie-based sessions:
+> - Login now **persists across reloads** (cookie session) instead of relying on a stored JWT.
+> - `token` is always `null` now — auth is cookie-based. Call sites that still pass `token` to `@/lib/api` functions continue to work; the argument is simply ignored (e.g. the `jwt` arg in `getBookedSlots`, or `token` in `addReview`).
+
+---
+
 ## Pages
 
-### HomePage (`src/pages/HomePage/`)
+> Page bodies live in `src/views/` (renamed from `src/pages/` to avoid colliding with Next.js). Each `src/app/.../page.jsx` route is a thin wrapper that renders the matching view.
+
+### HomePage (`src/views/HomePage/`)
 - Hero section with CTA buttons
 - "Are you a licensed psychologist?" CTA section → opens `ApplyModal`
 
-### PsychologistsPage (`src/pages/PsychologistsPage/`)
-- Fetches all psychologists from Strapi
+### PsychologistsPage (`src/views/PsychologistsPage/`)
+- Fetches all psychologists via `@/lib/api`
 - Search bar filters by name, surname, or specialization (client-side)
 - Spinner while loading
 - Renders a list of `PsychologistCard` components
 
-### FavoritesPage (`src/pages/FavoritesPage/`)
+### FavoritesPage (`src/views/FavoritesPage/`)
 - Protected route (login required)
 - Fetches all psychologists, then filters to only show favorites
 - Empty state with link to `/psychologists`
 
-### NotFoundPage (`src/pages/NotFoundPage/`)
+### NotFoundPage (`src/views/NotFoundPage/`)
 - Custom 404 page
 - "Go to Home" button

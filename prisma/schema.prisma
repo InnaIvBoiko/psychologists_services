@@ -1,0 +1,64 @@
+// Prisma schema — Neon PostgreSQL
+// Field names intentionally match the snake_case shape the frontend already consumes
+// (inherited from Strapi), so API responses are a direct spread with no remapping.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int      @id @default(autoincrement())
+  email                 String   @unique
+  username              String
+  passwordHash          String
+  // JSON arrays of psychologist ids — same shape the Strapi user fields used.
+  psy_favorites         Json?
+  psy_dismissed_reviews Json?
+  createdAt             DateTime @default(now())
+}
+
+model Psychologist {
+  id                   Int      @id @default(autoincrement())
+  name                 String
+  surname              String?
+  avatar               String?
+  experience           Int?
+  license              String?
+  specialization       String?
+  initial_consultation String?
+  about                String?  @db.Text
+  rating               Float?
+  price_per_hour       Float?
+  popular              Boolean  @default(false)
+  // Array of { reviewer, rating, comment, date }
+  reviews              Json?
+  isAvailable          Boolean  @default(true)
+  // Weekly availability config (see src/lib/availability.js)
+  availability         Json?
+  // Email of the registered user who owns this profile (for applications).
+  user_email           String?
+  // Replaces Strapi draft/publish: applications start unpublished.
+  published            Boolean  @default(true)
+  createdAt            DateTime @default(now())
+}
+
+model Appointment {
+  id                Int      @id @default(autoincrement())
+  patient_name      String
+  phone             String
+  email             String
+  // Stored as "YYYY-MM-DD HH:MM", same format the frontend already parses.
+  time_slot         String
+  comment           String?  @db.Text
+  psychologist_id   String
+  psychologist_name String
+  createdAt         DateTime @default(now())
+
+  @@index([email])
+  @@index([psychologist_id])
+}

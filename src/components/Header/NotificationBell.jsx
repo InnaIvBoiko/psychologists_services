@@ -6,7 +6,7 @@ import {
   getDismissedReviews,
   dismissAppointmentReview,
   cancelAppointment,
-} from '../../strapi/strapi.js'
+} from '@/lib/api'
 import ReviewModal from '../ReviewModal/ReviewModal.jsx'
 import CancelModal from '../CancelModal/CancelModal.jsx'
 import styles from './NotificationBell.module.css'
