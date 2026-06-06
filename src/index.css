@@ -52,6 +52,10 @@ body {
   color: var(--color-text-main);
   line-height: 1.6;
   min-height: 100vh;
+  /* Sticky footer: in Next.js the chrome (Header/main/Footer) sits directly in
+     <body>, so the flex column layout lives here (was on #root with Vite). */
+  display: flex;
+  flex-direction: column;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -101,11 +105,8 @@ h4 {
 /* ===========================
    Layout
    =========================== */
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+/* The sticky-footer flex layout now lives on <body> (see above);
+   #root no longer exists under Next.js. */
 
 main {
   flex: 1 0 auto;
