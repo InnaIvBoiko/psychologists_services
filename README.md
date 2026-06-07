@@ -47,7 +47,7 @@ A full-stack web application to browse and book sessions with licensed psycholog
 | Email | **Resend** (free tier) — transactional booking confirmations (optional) |
 | Rate limiting | **Upstash Redis** (free tier) — login/registration/booking caps (optional) |
 | Hosting | **Vercel** (single deployment) |
-| Tests | Vitest + Testing Library |
+| Tests | Vitest + Testing Library (component/unit) · **Playwright** (e2e) |
 
 ### Previous stack (before migration)
 
@@ -143,9 +143,12 @@ psychologists_services/
 │   ├── utils/availability.js # Slot/working-hours logic (unchanged)
 │   ├── test/intl.jsx         # Test helper: render wrapped in NextIntlClientProvider
 │   └── data/psychologists.json  # Seed data
+├── e2e/                      # Playwright end-to-end specs + helpers + global teardown
+├── .github/workflows/        # CI: ci.yml (lint + unit) · e2e.yml (Playwright)
 ├── next.config.js            # Wraps config with the next-intl plugin
 ├── jsconfig.json             # "@/*" → ./src/*
-├── vitest.config.js          # Vitest runs the test suite (app builds with Next)
+├── playwright.config.js      # E2E config (auto-starts the app, chromium)
+├── vitest.config.js          # Vitest runs the unit suite (app builds with Next)
 └── .env.example
 ```
 
@@ -351,13 +354,27 @@ To add a locale: add it to `routing.js` and create `messages/<locale>.json`.
 
 ## Running Tests
 
+Two levels run in CI on every PR (see [`docs/TESTING.md`](docs/TESTING.md)).
+
+**Component / unit** — Vitest + Testing Library:
+
 ```bash
 npm run test          # watch mode
 npm run test:run      # single run
 npm run test:coverage # coverage report
 ```
 
-The suite (Vitest + Testing Library) runs against the React components, hooks, and library helpers (`AuthContext`, `useFavorites`, `email`, `admin`), mocking `@/lib/api` and `next-auth/react`. Components that use translations are rendered through `src/test/intl.jsx`, which wraps them in a `NextIntlClientProvider` with the English catalog.
+Runs against the React components, hooks, and library helpers (`AuthContext`, `useFavorites`, `email`, `admin`), mocking `@/lib/api` and `next-auth/react`. Components that use translations are rendered through `src/test/intl.jsx`, which wraps them in a `NextIntlClientProvider` with the English catalog.
+
+**End-to-end** — Playwright drives the real app (App Router + Auth.js + Prisma/Neon) in a browser:
+
+```bash
+npm run test:e2e        # run the e2e suite (auto-starts the dev server)
+npm run test:e2e:ui     # interactive UI mode
+npm run test:e2e:report # open the last HTML report
+```
+
+Covers the public flows (home, browse/search/filter, i18n switch, route guards) and a self-cleaning auth lifecycle (register → session persists → delete account). The dev server starts automatically — a locally running one on `:3000` is reused. First run only: `npx playwright install chromium`.
 
 ---
 
