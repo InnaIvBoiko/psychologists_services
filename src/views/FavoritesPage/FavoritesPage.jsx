@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/lib/router'
 import PsychologistCard from '../../components/PsychologistCard/PsychologistCard.jsx'
 import { PsychologistCardSkeletonList } from '../../components/PsychologistCard/PsychologistCardSkeleton.jsx'
@@ -8,6 +9,7 @@ import { getPsychologists } from '@/lib/api'
 import styles from './FavoritesPage.module.css'
 
 export default function FavoritesPage() {
+  const t = useTranslations('Favorites')
   const { user } = useAuth()
   const { getFavorites } = useFavorites()
   const [toast, setToast] = useState(null)
@@ -42,20 +44,17 @@ export default function FavoritesPage() {
   return (
     <div className={styles.page}>
       <div className="container">
-        <h1 className={styles.pageTitle}>Favorites</h1>
+        <h1 className={styles.pageTitle}>{t('title')}</h1>
 
         {loading ? (
           <PsychologistCardSkeletonList count={2} />
         ) : favorites.length === 0 ? (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>💙</div>
-            <h2>No favorites yet</h2>
-            <p>
-              Browse our psychologists and click the heart icon to save your
-              favorites here for quick access.
-            </p>
+            <div className={styles.emptyIcon} aria-hidden="true">💙</div>
+            <h2>{t('emptyTitle')}</h2>
+            <p>{t('emptyDesc')}</p>
             <Link to="/psychologists" className="btn btn-center">
-              Browse psychologists
+              {t('browse')}
             </Link>
           </div>
         ) : (

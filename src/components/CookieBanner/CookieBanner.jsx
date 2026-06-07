@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/lib/router'
 import styles from './CookieBanner.module.css'
 
 const STORAGE_KEY = 'cookie_consent'
 
 export default function CookieBanner() {
+  const t = useTranslations('CookieBanner')
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -26,22 +28,21 @@ export default function CookieBanner() {
   if (!visible) return null
 
   return (
-    <div className={styles.banner} role="region" aria-label="Cookie consent">
+    <div className={styles.banner} role="region" aria-label={t('regionLabel')}>
       <div className={styles.inner}>
         <p className={styles.text}>
-          We use cookies to improve your experience and keep you logged in.
-          By continuing, you agree to our{' '}
-          <Link to="/privacy" className={styles.link}>
-            Privacy Policy
-          </Link>
-          .
+          {t.rich('text', {
+            privacy: (chunks) => (
+              <Link to="/privacy" className={styles.link}>{chunks}</Link>
+            ),
+          })}
         </p>
         <div className={styles.actions}>
           <button className={styles.decline} onClick={decline}>
-            Decline
+            {t('decline')}
           </button>
           <button className={styles.accept} onClick={accept}>
-            Accept all
+            {t('accept')}
           </button>
         </div>
       </div>

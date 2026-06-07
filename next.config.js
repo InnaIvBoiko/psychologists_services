@@ -1,7 +1,17 @@
+import createNextIntlPlugin from 'next-intl/plugin'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Avatars are remote URLs rendered via plain <img>, so no next/image remotePatterns needed.
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      { module: /next-intl[\\/].*extractor/ },
+    ]
+    return config
+  },
 }
 
-export default nextConfig
+// Points next-intl at the request config that loads per-locale messages.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.js')
+
+export default withNextIntl(nextConfig)

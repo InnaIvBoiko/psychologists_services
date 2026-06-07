@@ -112,11 +112,17 @@ main {
   flex: 1 0 auto;
 }
 
+/* Programmatically focused via the skip link — no persistent focus ring needed. */
+main:focus {
+  outline: none;
+}
+
 .container {
   width: 100%;
   max-width: 1184px;
   margin: 0 auto;
   padding: 0 24px;
+    position: relative;
 }
 
 @media (max-width: 350px) {
@@ -357,6 +363,30 @@ textarea.input-field {
   to {
     opacity: 1;
   }
+}
+
+/* ===========================
+   Skip link (keyboard a11y)
+   =========================== */
+.skip-link {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translate(-50%, -150%);
+  z-index: 10000;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-btn);
+  transition: transform var(--transition);
+}
+
+/* Slides into view only when focused via keyboard (Tab). */
+.skip-link:focus {
+  transform: translate(-50%, 0);
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 /* ===========================

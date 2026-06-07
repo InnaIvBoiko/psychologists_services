@@ -1,0 +1,37 @@
+.switcher {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  padding: 2px;
+  background: var(--color-surface);
+  position: absolute;
+  top: -60px;
+  right: 20px;
+}
+
+.option {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  padding: 5px 10px;
+  border-radius: var(--radius-btn);
+  line-height: 1;
+  transition: background var(--transition), color var(--transition);
+}
+
+.option:hover {
+  color: var(--color-text-main);
+}
+
+.option.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* Visible keyboard focus for accessibility. */
+.option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

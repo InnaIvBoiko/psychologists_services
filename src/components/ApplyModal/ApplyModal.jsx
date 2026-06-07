@@ -1,11 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/lib/router'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { submitPsychologistApplication } from '@/lib/api'
 import { DEFAULT_AVAILABILITY } from '../../utils/availability.js'
 import Modal from '../Modal/Modal.jsx'
+import AuthModal from '../AuthModal/AuthModal.jsx'
 import AvailabilityEditor from '../AvailabilityEditor/AvailabilityEditor.jsx'
 import styles from './ApplyModal.module.css'
+
+// Best-effort split of a display name into first/last for pre-filling the form.
+function splitName(displayName = '') {
+  const parts = displayName.trim().split(/\s+/)
+  return { name: parts[0] || '', surname: parts.slice(1).join(' ') }
+}
 
 const SPECIALIZATIONS = [
   'Anxiety & Stress',
@@ -33,8 +41,9 @@ const INITIAL_FORM = {
 }
 
 export default function ApplyModal({ onClose }) {
+  const t = useTranslations('ApplyModal')
   const { user, register: registerUser } = useAuth()
-  const [form, setForm] = useState(INITIAL_FORM)
+  const [form, setForm] = useState(() => ({ ...INITIAL_FORM, ...splitName(user?.displayName) }))
   const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY)
   const [consent, setConsent] = useState(false)
   const [email, setEmail] = useState('')
@@ -42,6 +51,17 @@ export default function ApplyModal({ onClose }) {
   const [showPass, setShowPass] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [authMode, setAuthMode] = useState(null) // inline auth modal: null | 'login' | 'register'
+
+  // If the user logs in while the apply form is open (via the inline login modal),
+  // pre-fill their name from the account — but never overwrite anything they typed.
+  useEffect(() => {
+    if (!user) return
+    setForm((prev) => {
+      if (prev.name || prev.surname) return prev
+      return { ...prev, ...splitName(user.displayName) }
+    })
+  }, [user])
   const [submitted, setSubmitted] = useState(false)
 
   const set = (field) => (e) =>
@@ -49,22 +69,22 @@ export default function ApplyModal({ onClose }) {
 
   const validate = () => {
     const errs = {}
-    if (!form.name.trim()) errs.name = 'Required'
-    if (!form.surname.trim()) errs.surname = 'Required'
-    if (!form.specialization) errs.specialization = 'Required'
+    if (!form.name.trim()) errs.name = t('errRequired')
+    if (!form.surname.trim()) errs.surname = t('errRequired')
+    if (!form.specialization) errs.specialization = t('errRequired')
     if (!form.experience || isNaN(Number(form.experience)) || Number(form.experience) < 0)
-      errs.experience = 'Enter valid years'
-    if (!form.license.trim()) errs.license = 'Required'
+      errs.experience = t('errValidYears')
+    if (!form.license.trim()) errs.license = t('errRequired')
     if (!form.price_per_hour || isNaN(Number(form.price_per_hour)) || Number(form.price_per_hour) <= 0)
-      errs.price_per_hour = 'Enter valid price'
+      errs.price_per_hour = t('errValidPrice')
     if (!form.about.trim() || form.about.trim().length < 50)
-      errs.about = 'Please write at least 50 characters'
-    if (!consent) errs.consent = 'You must accept the Privacy Policy to submit'
+      errs.about = t('errAboutMin')
+    if (!consent) errs.consent = t('errConsent')
     if (!user) {
-      if (!email.trim()) errs.email = 'Email is required'
-      else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
-      if (!password) errs.password = 'Password is required'
-      else if (password.length < 8) errs.password = 'At least 8 characters'
+      if (!email.trim()) errs.email = t('errEmailRequired')
+      else if (!/\S+@\S+\.\S+/.test(email)) errs.email = t('errEmailInvalid')
+      if (!password) errs.password = t('errPasswordRequired')
+      else if (password.length < 8) errs.password = t('errPasswordShort')
     }
     return errs
   }
@@ -89,9 +109,9 @@ export default function ApplyModal({ onClose }) {
       } catch (err) {
         const msg = (err.message || '').toLowerCase()
         if (msg.includes('taken') || msg.includes('email') || msg.includes('username')) {
-          setErrors({ email: 'This email is already registered. Please log in first.' })
+          setErrors({ email: t('errEmailTaken') })
         } else {
-          setErrors({ api: err.message || 'Failed to create account. Please try again.' })
+          setErrors({ api: err.message || t('errAccount') })
         }
         setLoading(false)
         return
@@ -119,7 +139,7 @@ export default function ApplyModal({ onClose }) {
       setSubmitted(true)
     } catch (err) {
       console.error(err)
-      setErrors({ api: 'Failed to submit application. Please try again.' })
+      setErrors({ api: t('errApi') })
     } finally {
       setLoading(false)
     }
@@ -127,16 +147,13 @@ export default function ApplyModal({ onClose }) {
 
   if (submitted) {
     return (
-      <Modal onClose={onClose} title="Application submitted">
+      <Modal onClose={onClose} title={t('successHeading')}>
         <div className={styles.success}>
-          <div className={styles.successIcon}>🎉</div>
-          <h3 className={styles.successTitle}>Thank you for applying!</h3>
-          <p className={styles.successText}>
-            Your application has been received and is under review.
-            Our team will contact you within 2–3 business days.
-          </p>
+          <div className={styles.successIcon} aria-hidden="true">🎉</div>
+          <h3 className={styles.successTitle}>{t('successTitle')}</h3>
+          <p className={styles.successText}>{t('successText')}</p>
           <button className="btn btn-center" onClick={onClose} style={{ marginTop: 8 }}>
-            Close
+            {t('close')}
           </button>
         </div>
       </Modal>
@@ -144,29 +161,27 @@ export default function ApplyModal({ onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} title="Apply as a Psychologist">
+    <>
+    <Modal onClose={onClose} title={t('title')}>
       <div className={styles.content}>
-        <p className={styles.subtitle}>
-          Join our platform and help people with their mental health.
-          Fill in your professional details below.
-        </p>
+        <p className={styles.subtitle}>{t('subtitle')}</p>
 
         <div className={styles.notice}>
-          <span className={styles.noticeIcon}>ℹ️</span>
-          Your profile will be reviewed by our team before being published.
-          This usually takes 2–3 business days.
+          <span className={styles.noticeIcon} aria-hidden="true">ℹ️</span>
+          {t('notice')}
         </div>
 
         {errors.api && <div className={styles.apiError}>{errors.api}</div>}
 
         <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          <p className={styles.sectionLabel}>Personal info</p>
+          <p className={styles.sectionLabel}>{t('sectionPersonal')}</p>
           <div className={styles.row}>
             <div className="input-group">
               <input
                 className={`input-field ${errors.name ? 'error' : ''}`}
-                placeholder="First name"
+                placeholder={t('firstName')}
+                aria-label={t('firstName')}
                 value={form.name}
                 onChange={set('name')}
               />
@@ -175,7 +190,8 @@ export default function ApplyModal({ onClose }) {
             <div className="input-group">
               <input
                 className={`input-field ${errors.surname ? 'error' : ''}`}
-                placeholder="Last name"
+                placeholder={t('lastName')}
+                aria-label={t('lastName')}
                 value={form.surname}
                 onChange={set('surname')}
               />
@@ -186,29 +202,41 @@ export default function ApplyModal({ onClose }) {
           <div className="input-group">
             <input
               className="input-field"
-              placeholder="Photo URL (optional)"
+              placeholder={t('photoUrl')}
+              aria-label={t('photoUrl')}
               value={form.avatar}
               onChange={set('avatar')}
               type="url"
             />
           </div>
 
+          {/* Logged in: confirm which account is applying (no account fields needed). */}
+          {user && (
+            <p className={styles.accountHint}>
+              {t.rich('applyingAs', {
+                email: user.email,
+                b: (chunks) => <strong>{chunks}</strong>,
+              })}
+            </p>
+          )}
+
           {/* Account creation — only for non-logged-in users */}
           {!user && (
             <>
-              <p className={styles.sectionLabel}>Your account</p>
+              <p className={styles.sectionLabel}>{t('sectionAccount')}</p>
               <p className={styles.accountHint}>
-                An account will be created automatically so you can manage your profile.
-                {' '}Already have one?{' '}
-                <button type="button" className={styles.loginHintBtn} onClick={onClose}>
-                  Log in first
-                </button>
+                {t.rich('accountHint', {
+                  login: (chunks) => (
+                    <button type="button" className={styles.loginHintBtn} onClick={() => setAuthMode('login')}>{chunks}</button>
+                  ),
+                })}
               </p>
               <div className="input-group">
                 <input
                   className={`input-field ${errors.email ? 'error' : ''}`}
                   type="email"
-                  placeholder="Email"
+                  placeholder={t('email')}
+                  aria-label={t('email')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -220,7 +248,8 @@ export default function ApplyModal({ onClose }) {
                   <input
                     className={`input-field ${errors.password ? 'error' : ''}`}
                     type={showPass ? 'text' : 'password'}
-                    placeholder="Password (min. 8 characters)"
+                    placeholder={t('password')}
+                    aria-label={t('password')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
@@ -229,7 +258,7 @@ export default function ApplyModal({ onClose }) {
                     type="button"
                     className="input-toggle-btn"
                     onClick={() => setShowPass((v) => !v)}
-                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                    aria-label={showPass ? t('hidePassword') : t('showPassword')}
                   >
                     {showPass ? '🙈' : '👁'}
                   </button>
@@ -239,14 +268,15 @@ export default function ApplyModal({ onClose }) {
             </>
           )}
 
-          <p className={styles.sectionLabel}>Professional details</p>
+          <p className={styles.sectionLabel}>{t('sectionProfessional')}</p>
           <div className="input-group">
             <select
               className={`input-field ${errors.specialization ? 'error' : ''}`}
               value={form.specialization}
               onChange={set('specialization')}
+              aria-label={t('selectSpecialization')}
             >
-              <option value="">Select specialization</option>
+              <option value="">{t('selectSpecialization')}</option>
               {SPECIALIZATIONS.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
@@ -258,7 +288,8 @@ export default function ApplyModal({ onClose }) {
             <div className="input-group">
               <input
                 className={`input-field ${errors.experience ? 'error' : ''}`}
-                placeholder="Years of experience"
+                placeholder={t('yearsExperience')}
+                aria-label={t('yearsExperience')}
                 value={form.experience}
                 onChange={set('experience')}
                 type="number"
@@ -270,7 +301,8 @@ export default function ApplyModal({ onClose }) {
             <div className="input-group">
               <input
                 className={`input-field ${errors.license ? 'error' : ''}`}
-                placeholder="License number"
+                placeholder={t('licenseNumber')}
+                aria-label={t('licenseNumber')}
                 value={form.license}
                 onChange={set('license')}
               />
@@ -282,7 +314,8 @@ export default function ApplyModal({ onClose }) {
             <div className="input-group">
               <input
                 className={`input-field ${errors.price_per_hour ? 'error' : ''}`}
-                placeholder="Price per hour ($)"
+                placeholder={t('pricePerHour')}
+                aria-label={t('pricePerHour')}
                 value={form.price_per_hour}
                 onChange={set('price_per_hour')}
                 type="number"
@@ -293,24 +326,24 @@ export default function ApplyModal({ onClose }) {
             <div className="input-group">
               <input
                 className="input-field"
-                placeholder='Initial consultation (e.g. "Free")'
+                placeholder={t('initialConsultation')}
+                aria-label={t('initialConsultation')}
                 value={form.initial_consultation}
                 onChange={set('initial_consultation')}
               />
             </div>
           </div>
 
-          <p className={styles.sectionLabel}>Availability</p>
-          <p className={styles.availabilityHint}>
-            Set your working hours. Patients will only be able to book slots within these times.
-          </p>
+          <p className={styles.sectionLabel}>{t('sectionAvailability')}</p>
+          <p className={styles.availabilityHint}>{t('availabilityHint')}</p>
           <AvailabilityEditor value={availability} onChange={setAvailability} />
 
-          <p className={styles.sectionLabel}>About you</p>
+          <p className={styles.sectionLabel}>{t('sectionAbout')}</p>
           <div className="input-group">
             <textarea
               className={`input-field ${errors.about ? 'error' : ''}`}
-              placeholder="Describe your approach, methods, and experience (min. 50 characters)"
+              placeholder={t('aboutPlaceholder')}
+              aria-label={t('aboutPlaceholder')}
               value={form.about}
               onChange={set('about')}
               rows={4}
@@ -327,11 +360,11 @@ export default function ApplyModal({ onClose }) {
                 className={styles.consentCheckbox}
               />
               <span>
-                I agree to the{' '}
-                <Link to="/privacy" target="_blank" className={styles.consentLink}>
-                  Privacy Policy
-                </Link>{' '}
-                and consent to the processing of my personal data
+                {t.rich('consent', {
+                  privacy: (chunks) => (
+                    <Link to="/privacy" target="_blank" className={styles.consentLink}>{chunks}</Link>
+                  ),
+                })}
               </span>
             </label>
             {errors.consent && <span className="input-error-msg">{errors.consent}</span>}
@@ -343,10 +376,19 @@ export default function ApplyModal({ onClose }) {
             style={{ width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Submitting…' : 'Submit application'}
+            {loading ? t('submitting') : t('submit')}
           </button>
         </form>
       </div>
     </Modal>
+
+    {authMode && (
+      <AuthModal
+        mode={authMode}
+        onClose={() => setAuthMode(null)}
+        onSwitchMode={(m) => setAuthMode(m)}
+      />
+    )}
+    </>
   )
 }

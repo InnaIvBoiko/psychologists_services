@@ -1,10 +1,13 @@
+import { getTranslations } from 'next-intl/server'
 import { getPublishedPsychologists } from '@/lib/queries'
 import PsychologistsPage from '@/views/PsychologistsPage/PsychologistsPage.jsx'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = {
-  title: 'Psychologists — browse and book a session',
+export async function generateMetadata({ params }) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'Metadata' })
+  return { title: t('psychologistsTitle') }
 }
 
 // Server Component: the list is fetched on the server and passed to the

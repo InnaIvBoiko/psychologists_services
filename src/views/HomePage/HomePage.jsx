@@ -1,59 +1,69 @@
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useNavigate } from '@/lib/router'
 import ApplyModal from '../../components/ApplyModal/ApplyModal.jsx'
+import LanguageSwitcher from '../../components/Header/LanguageSwitcher.jsx'
 import styles from './HomePage.module.css'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const t = useTranslations('Home')
   const [applyOpen, setApplyOpen] = useState(false)
+
+  const features = [
+    { icon: '🔍', title: t('feature1Title'), desc: t('feature1Desc') },
+    { icon: '⭐', title: t('feature2Title'), desc: t('feature2Desc') },
+    { icon: '📅', title: t('feature3Title'), desc: t('feature3Desc') },
+    { icon: '💬', title: t('feature4Title'), desc: t('feature4Desc') },
+  ]
 
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
         <div className={`container ${styles.heroInner}`}>
           <div className={styles.heroContent}>
-            <span className={styles.badge}>🌿 Mental Health Support</span>
+            <div className={styles.badgeRow}>
+              <span className={styles.badge}>{t('badge')}</span>
+              <LanguageSwitcher />
+            </div>
             <h1 className={styles.headline}>
-              The road to the&nbsp;
-              <span className={styles.accent}>healthy mind</span>
-              <br />starts here
+              {t.rich('headline', {
+                accent: (chunks) => <span className={styles.accent}>{chunks}</span>,
+                br: () => <br />,
+              })}
             </h1>
-            <p className={styles.description}>
-              Welcome to Psychologists.Services — your trusted platform for
-              finding licensed psychologists who truly understand you. Browse
-              verified profiles, read reviews, and book appointments in minutes.
-            </p>
+            <p className={styles.description}>{t('description')}</p>
             <div className={styles.ctas}>
               <button
                 className="btn btn-primary"
                 style={{ fontSize: '1.05rem', padding: '14px 36px' }}
                 onClick={() => navigate('/psychologists')}
               >
-                Get started
+                {t('getStarted')}
               </button>
               <button
                 className="btn btn-outline"
                 style={{ fontSize: '1.05rem', padding: '14px 36px' }}
                 onClick={() => navigate('/psychologists')}
               >
-                View psychologists
+                {t('viewPsychologists')}
               </button>
             </div>
 
             <div className={styles.stats}>
               <div className={styles.stat}>
                 <strong>15+</strong>
-                <span>Verified specialists</span>
+                <span>{t('statSpecialists')}</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.stat}>
                 <strong>4.7 ⭐</strong>
-                <span>Average rating</span>
+                <span>{t('statRating')}</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.stat}>
                 <strong>100%</strong>
-                <span>Confidential</span>
+                <span>{t('statConfidential')}</span>
               </div>
             </div>
           </div>
@@ -70,26 +80,24 @@ export default function HomePage() {
                   <span className={styles.heroOnline} />
                 </div>
                 <div>
-                  <p className={styles.heroPsychLabel}>Psychologist</p>
+                  <p className={styles.heroPsychLabel}>{t('cardLabel')}</p>
                   <p className={styles.heroPsychName}>Dr. Sarah Davis</p>
                 </div>
                 <div className={styles.heroRating}>⭐ 4.80</div>
               </div>
               <div className={styles.heroTags}>
-                <span className="tag">Experience: <strong>12 years</strong></span>
+                <span className="tag">{t('cardExperience')} <strong>{t('cardYears', { count: 12 })}</strong></span>
                 <span className="tag"><strong>Depression & Mood</strong></span>
               </div>
-              <p className={styles.heroBio}>
-                Empathetic, experienced, and deeply committed to your mental wellness journey.
-              </p>
-              <div className={styles.heroPrice}>Price / 1 hour: <strong>120$</strong></div>
+              <p className={styles.heroBio}>{t('cardBio')}</p>
+              <div className={styles.heroPrice}>{t('cardPrice')} <strong>120$</strong></div>
             </div>
 
             <div className={styles.floatBadge1}>
-              <span>✓</span> Free initial consultation
+              <span>✓</span> {t('floatConsultation')}
             </div>
             <div className={styles.floatBadge2}>
-              <span>🔒</span> 100% Confidential
+              <span>🔒</span> {t('floatConfidential')}
             </div>
           </div>
         </div>
@@ -100,15 +108,12 @@ export default function HomePage() {
         <div className="container">
           <div className={styles.joinInner}>
             <div className={styles.joinContent}>
-              <h2 className={styles.joinTitle}>Are you a licensed psychologist?</h2>
-              <p className={styles.joinDesc}>
-                Join our platform and connect with patients who need your expertise.
-                Simple onboarding, flexible schedule, and a growing community of mental health professionals.
-              </p>
+              <h2 className={styles.joinTitle}>{t('joinTitle')}</h2>
+              <p className={styles.joinDesc}>{t('joinDesc')}</p>
               <ul className={styles.joinPerks}>
-                <li>✓ Free profile listing</li>
-                <li>✓ Online appointment management</li>
-                <li>✓ Reviewed & published within 2–3 days</li>
+                <li>✓ {t('joinPerk1')}</li>
+                <li>✓ {t('joinPerk2')}</li>
+                <li>✓ {t('joinPerk3')}</li>
               </ul>
             </div>
             <button
@@ -124,7 +129,7 @@ export default function HomePage() {
               }}
               onClick={() => setApplyOpen(true)}
             >
-              Apply now
+              {t('applyNow')}
             </button>
           </div>
         </div>
@@ -134,12 +139,7 @@ export default function HomePage() {
       <div className={styles.features}>
         <div className="container">
           <div className={styles.featureGrid}>
-            {[
-              { icon: '🔍', title: 'Find & Filter', desc: 'Search by specialization, price, and experience' },
-              { icon: '⭐', title: 'Trusted Reviews', desc: 'Verified patient reviews and ratings' },
-              { icon: '📅', title: 'Easy Booking', desc: 'Book your session in just a few clicks' },
-              { icon: '💬', title: 'Confidential', desc: 'Your privacy is our top priority' },
-            ].map((f) => (
+            {features.map((f) => (
               <div key={f.title} className={styles.featureCard}>
                 <div className={styles.featureIcon}>{f.icon}</div>
                 <h4>{f.title}</h4>

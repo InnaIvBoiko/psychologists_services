@@ -21,6 +21,15 @@
   gap: 22px;
 }
 
+/* Top row of the hero: the badge on the left, the language switcher on the right. */
+.badgeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  align-self: stretch;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -31,7 +40,6 @@
   border-radius: 30px;
   font-size: 0.85rem;
   font-weight: 600;
-  align-self: flex-start;
 }
 
 .headline {

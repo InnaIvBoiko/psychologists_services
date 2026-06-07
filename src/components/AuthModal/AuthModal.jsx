@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/lib/router'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Modal from '../Modal/Modal.jsx'
 import styles from './AuthModal.module.css'
 
 export default function AuthModal({ mode, onClose, onSwitchMode }) {
+  const t = useTranslations('AuthModal')
   const { login, register } = useAuth()
   const isLogin = mode === 'login'
 
@@ -19,13 +21,13 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
 
   const validate = () => {
     const errs = {}
-    if (!isLogin && !name.trim()) errs.name = 'Name is required'
-    if (!email.trim()) errs.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email'
-    if (!password) errs.password = 'Password is required'
+    if (!isLogin && !name.trim()) errs.name = t('errNameRequired')
+    if (!email.trim()) errs.email = t('errEmailRequired')
+    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = t('errEmailInvalid')
+    if (!password) errs.password = t('errPasswordRequired')
     // Min length is a registration policy; don't lock out existing accounts on login.
-    else if (!isLogin && password.length < 8) errs.password = 'Password must be at least 8 characters'
-    if (!isLogin && !consent) errs.consent = 'You must accept the Privacy Policy to register'
+    else if (!isLogin && password.length < 8) errs.password = t('errPasswordShort')
+    if (!isLogin && !consent) errs.consent = t('errConsentRequired')
     return errs
   }
 
@@ -44,33 +46,30 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
       }
       onClose()
     } catch (err) {
-      // Strapi errors are thrown as Error objects with the message string
-      setServerError(friendlyError(err.message))
+      setServerError(friendlyError(err.message, t))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal onClose={onClose} title={isLogin ? 'Log In' : 'Registration'}>
+    <Modal onClose={onClose} title={isLogin ? t('loginTitle') : t('registerTitle')}>
       <div className={styles.content}>
-        <h2 className={styles.title}>{isLogin ? 'Log In' : 'Registration'}</h2>
+        <h2 className={styles.title}>{isLogin ? t('loginTitle') : t('registerTitle')}</h2>
         <p className={styles.subtitle}>
-          {isLogin
-            ? 'Welcome back! Please log in to your account.'
-            : 'Create your account to access all features.'}
+          {isLogin ? t('loginSubtitle') : t('registerSubtitle')}
         </p>
 
         {isLogin && (
           <div className={styles.demoBox}>
-            <span className={styles.demoTitle}>🔑 Demo admin — try the publish / edit / delete tools</span>
+            <span className={styles.demoTitle}>{t('demoTitle')}</span>
             <code className={styles.demoCreds}>admin@example.com · Password123!</code>
             <button
               type="button"
               className={styles.demoFill}
               onClick={() => { setEmail('admin@example.com'); setPassword('Password123!') }}
             >
-              Fill in
+              {t('demoFill')}
             </button>
           </div>
         )}
@@ -83,7 +82,8 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
               <input
                 className={`input-field ${errors.name ? 'error' : ''}`}
                 type="text"
-                placeholder="Name"
+                placeholder={t('namePlaceholder')}
+                aria-label={t('namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
@@ -96,7 +96,8 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
             <input
               className={`input-field ${errors.email ? 'error' : ''}`}
               type="email"
-              placeholder="Email"
+              placeholder={t('emailPlaceholder')}
+              aria-label={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -109,7 +110,8 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
               <input
                 className={`input-field ${errors.password ? 'error' : ''}`}
                 type={showPass ? 'text' : 'password'}
-                placeholder="Password"
+                placeholder={t('passwordPlaceholder')}
+                aria-label={t('passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
@@ -118,7 +120,7 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
                 type="button"
                 className="input-toggle-btn"
                 onClick={() => setShowPass((v) => !v)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
+                aria-label={showPass ? t('hidePassword') : t('showPassword')}
               >
                 {showPass ? '🙈' : '👁'}
               </button>
@@ -136,10 +138,11 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
                   className={styles.consentCheckbox}
                 />
                 <span>
-                  I agree to the{' '}
-                  <Link to="/privacy" target="_blank" className={styles.consentLink}>
-                    Privacy Policy
-                  </Link>
+                  {t.rich('consent', {
+                    privacy: (chunks) => (
+                      <Link to="/privacy" target="_blank" className={styles.consentLink}>{chunks}</Link>
+                    ),
+                  })}
                 </span>
               </label>
               {errors.consent && <span className="input-error-msg">{errors.consent}</span>}
@@ -152,18 +155,18 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
             style={{ width: '100%', marginTop: 8 }}
             disabled={loading}
           >
-            {loading ? 'Please wait…' : isLogin ? 'Log In' : 'Sign Up'}
+            {loading ? t('submitting') : isLogin ? t('submitLogin') : t('submitRegister')}
           </button>
         </form>
 
         <p className={styles.switchText}>
-          {isLogin ? "Don't have an account? " : 'Already have an account? '}
+          {isLogin ? t('switchToRegister') : t('switchToLogin')}
           <button
             className={styles.switchBtn}
             type="button"
             onClick={() => onSwitchMode(isLogin ? 'register' : 'login')}
           >
-            {isLogin ? 'Register' : 'Log In'}
+            {isLogin ? t('switchRegister') : t('switchLogin')}
           </button>
         </p>
       </div>
@@ -171,15 +174,16 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
   )
 }
 
-function friendlyError(message) {
-  if (!message) return 'Something went wrong. Please try again.'
-  
+// Maps known backend error messages to friendly, localized copy.
+function friendlyError(message, t) {
+  if (!message) return t('errGeneric')
+
   const msgLower = message.toLowerCase()
-  
-  if (msgLower.includes('email') && msgLower.includes('taken')) return 'This email is already registered.'
-  if (msgLower.includes('username') && msgLower.includes('taken')) return 'This name is already taken.'
-  if (msgLower.includes('invalid identifier or password')) return 'Invalid email or password.'
-  if (msgLower.includes('network error')) return 'Network error. Check your connection.'
-  
+
+  if (msgLower.includes('email') && msgLower.includes('taken')) return t('errEmailTaken')
+  if (msgLower.includes('username') && msgLower.includes('taken')) return t('errNameTaken')
+  if (msgLower.includes('invalid identifier or password')) return t('errInvalidCredentials')
+  if (msgLower.includes('network error')) return t('errNetwork')
+
   return message
 }

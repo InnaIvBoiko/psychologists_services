@@ -1,18 +1,17 @@
+import { useTranslations } from 'next-intl'
 import styles from './Footer.module.css'
 
 export default function Footer() {
+  const t = useTranslations('Footer')
   return (
     <footer className={styles.footer}>
       <div className="container">
         <p className={styles.disclaimer}>
-          ⚠️ <strong>Demo project.</strong> All psychologist profiles, reviews,
-          ratings, prices and availability shown on this site are fictional
-          examples created for demonstration purposes only. They do not
-          represent real people, licensed professionals, or actual services.
+          ⚠️ {t.rich('disclaimer', { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
         <div className={styles.footerMeta}>
           <p className={styles.footerAuthor}>
-            Designed &amp; developed by <strong>Inna Boiko</strong>
+            {t.rich('author', { b: (chunks) => <strong>{chunks}</strong> })}
           </p>
           <div className={styles.footerLinks}>
             <a href="mailto:inna_boiko@libero.it">inna_boiko@libero.it</a>

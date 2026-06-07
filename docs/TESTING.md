@@ -33,12 +33,15 @@ Coverage report is written to `coverage/` and opened via `coverage/index.html`.
 
 ```
 src/
-├── utils/__tests__/
-│   └── availability.test.js      # Slot generation logic (see below)
+├── lib/
+│   ├── admin.test.js             # isAdminEmail allowlist
+│   └── email.test.js             # Resend confirmation email (no-op, POST, HTML-escape, no-throw)
 ├── hooks/__tests__/
 │   └── useFavorites.test.js      # useFavorites custom hook
 ├── context/__tests__/
 │   └── AuthContext.test.jsx      # AuthContext provider (Auth.js)
+├── test/
+│   └── intl.jsx                  # Helper: render() wrapped in NextIntlClientProvider (en)
 └── components/
     ├── AppointmentModal/__tests__/
     │   ├── AppointmentModal.test.jsx  # Booking modal — auth notice, guest flow
@@ -49,7 +52,9 @@ src/
 
 > **Migration note (Strapi → Next.js):** the data layer now lives in `src/lib/api.js` and is mocked as `@/lib/api`. The old `src/strapi/` directory — including `src/strapi/__tests__/strapi.test.js` — was removed. Page bodies have moved to `src/views/`; component tests remain under `src/components/**/__tests__`.
 
-**Current status:** the full suite passes — **5 test files, 51 tests green**.
+> **i18n note:** components that call `useTranslations`/`useLocale` are rendered via `src/test/intl.jsx`, whose `render()` wraps them in a `NextIntlClientProvider` with the English catalog — so assertions match the real English copy. Locale-dependent expectations (e.g. `Intl` weekday names "Mon"/"Tue") were updated accordingly.
+
+**Current status:** the full suite passes — **7 test files, 58 tests green**.
 
 ---
 

@@ -1,19 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import PsychologistCard from '../../components/PsychologistCard/PsychologistCard.jsx'
 import { getPsychologists } from '@/lib/api'
 import { useDebounce } from '../../hooks/useDebounce.js'
 import styles from './PsychologistsPage.module.css'
 
+// `labelKey` resolves against the "Psychologists" message namespace at render time.
 const FILTERS = [
-  { label: 'Show all', value: 'all' },
-  { label: 'A to Z', value: 'az' },
-  { label: 'Z to A', value: 'za' },
-  { label: 'Less than 100$', value: 'lt100' },
-  { label: 'Greater than 100$', value: 'gt100' },
-  { label: 'Popular', value: 'popular' },
-  { label: 'Not popular', value: 'not-popular' },
+  { labelKey: 'filterShowAll', value: 'all' },
+  { labelKey: 'filterAZ', value: 'az' },
+  { labelKey: 'filterZA', value: 'za' },
+  { labelKey: 'filterLt100', value: 'lt100' },
+  { labelKey: 'filterGt100', value: 'gt100' },
+  { labelKey: 'filterPopular', value: 'popular' },
+  { labelKey: 'filterNotPopular', value: 'not-popular' },
 ]
 
 const PAGE_SIZE = 3
@@ -31,6 +33,7 @@ function applyFilter(list, filter) {
 }
 
 export default function PsychologistsPage({ initialPsychologists = [] }) {
+  const t = useTranslations('Psychologists')
   const [data, setData] = useState(initialPsychologists)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -73,23 +76,29 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
     setTimeout(() => setToast(null), 3000)
   }
 
-  const currentLabel = FILTERS.find((f) => f.value === filter)?.label ?? 'Filter'
+  const currentKey = FILTERS.find((f) => f.value === filter)?.labelKey
+  const currentLabel = currentKey ? t(currentKey) : t('filterLabel')
 
   return (
     <div className={styles.page}>
       <div className="container">
         <div className={styles.toolbar}>
-          <h1 className={styles.pageTitle}>Psychologists</h1>
+          <h1 className={styles.pageTitle}>{t('title')}</h1>
           <div className={styles.searchWrap}>
-            <span className={styles.searchIcon}>🔍</span>
+            <span className={styles.searchIcon} aria-hidden="true">🔍</span>
             <input
               className={styles.searchInput}
-              placeholder="Search by name or specialization…"
+              placeholder={t('searchPlaceholder')}
+              aria-label={t('searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button className={styles.searchClear} onClick={() => setSearch('')}>✕</button>
+              <button
+                className={styles.searchClear}
+                onClick={() => setSearch('')}
+                aria-label={t('clearSearch')}
+              >✕</button>
             )}
           </div>
           <div className={styles.dropdown}>
@@ -98,12 +107,13 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
               onClick={() => setDropOpen((v) => !v)}
               aria-haspopup="listbox"
               aria-expanded={dropOpen}
+              aria-label={t('filterLabel')}
             >
               {currentLabel}
-              <span className={`${styles.dropArrow} ${dropOpen ? styles.open : ''}`}>▾</span>
+              <span className={`${styles.dropArrow} ${dropOpen ? styles.open : ''}`} aria-hidden="true">▾</span>
             </button>
             {dropOpen && (
-              <ul className={styles.dropMenu} role="listbox">
+              <ul className={styles.dropMenu} role="listbox" aria-label={t('filterLabel')}>
                 {FILTERS.map((f) => (
                   <li
                     key={f.value}
@@ -112,7 +122,7 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
                     className={`${styles.dropItem} ${filter === f.value ? styles.dropItemActive : ''}`}
                     onClick={() => { setFilter(f.value); setDropOpen(false) }}
                   >
-                    {f.label}
+                    {t(f.labelKey)}
                   </li>
                 ))}
               </ul>
@@ -121,7 +131,7 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
         </div>
 
         {filtered.length === 0 ? (
-          <p className={styles.empty}>No psychologists match this filter.</p>
+          <p className={styles.empty}>{t('empty')}</p>
         ) : (
           <div className={styles.list}>
             {visible.map((p) => (
@@ -136,7 +146,7 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
               className="btn btn-primary"
               onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
             >
-              Load more
+              {t('loadMore')}
             </button>
           </div>
         )}

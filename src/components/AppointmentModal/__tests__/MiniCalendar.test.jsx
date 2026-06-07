@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '../../../test/intl.jsx'
 import MiniCalendar from '../MiniCalendar.jsx'
 
 // Fix "today" to a known date so tests are deterministic
@@ -18,7 +18,8 @@ describe('MiniCalendar', () => {
 
   it('renders all 7 day-name headers', () => {
     render(<MiniCalendar selected={null} onChange={vi.fn()} />)
-    const headers = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+    // Localized short weekday names (en-GB via Intl).
+    const headers = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     headers.forEach(d => expect(screen.getByText(d)).toBeInTheDocument())
   })
 
@@ -52,13 +53,13 @@ describe('MiniCalendar', () => {
 
   it('navigates to the next month', () => {
     render(<MiniCalendar selected={null} onChange={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: '›' }))
+    fireEvent.click(screen.getByRole('button', { name: /next month/i }))
     expect(screen.getByText('July 2025')).toBeInTheDocument()
   })
 
   it('navigates to the previous month', () => {
     render(<MiniCalendar selected={null} onChange={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: '‹' }))
+    fireEvent.click(screen.getByRole('button', { name: /previous month/i }))
     expect(screen.getByText('May 2025')).toBeInTheDocument()
   })
 
@@ -66,7 +67,7 @@ describe('MiniCalendar', () => {
     // Start at January 2026
     vi.setSystemTime(new Date('2026-01-10T00:00:00'))
     render(<MiniCalendar selected={null} onChange={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: '‹' }))
+    fireEvent.click(screen.getByRole('button', { name: /previous month/i }))
     expect(screen.getByText('December 2025')).toBeInTheDocument()
     vi.setSystemTime(FIXED_DATE)
   })
@@ -74,7 +75,7 @@ describe('MiniCalendar', () => {
   it('wraps from December to January when navigating forward', () => {
     vi.setSystemTime(new Date('2025-12-01T00:00:00'))
     render(<MiniCalendar selected={null} onChange={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: '›' }))
+    fireEvent.click(screen.getByRole('button', { name: /next month/i }))
     expect(screen.getByText('January 2026')).toBeInTheDocument()
     vi.setSystemTime(FIXED_DATE)
   })
