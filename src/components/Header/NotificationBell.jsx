@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAuth } from '../../context/AuthContext.jsx'
 import {
   getUserAppointments,
@@ -7,18 +8,19 @@ import {
   dismissAppointmentReview,
   cancelAppointment,
 } from '@/lib/api'
+import { dateLocale } from '@/i18n/format'
 import ReviewModal from '../ReviewModal/ReviewModal.jsx'
 import CancelModal from '../CancelModal/CancelModal.jsx'
 import styles from './NotificationBell.module.css'
 
 const MS_24H = 24 * 60 * 60 * 1000
 
-function formatSlot(slot) {
+function formatSlot(slot, locale) {
   if (!slot) return { date: '', time: '' }
   const [datePart, timePart] = slot.split(' ')
   if (!datePart) return { date: slot, time: '' }
   const d = new Date(datePart)
-  const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+  const date = d.toLocaleDateString(dateLocale(locale), { weekday: 'short', day: 'numeric', month: 'short' })
   return { date, time: timePart || '' }
 }
 
@@ -29,6 +31,8 @@ function isCancellable(time_slot) {
 }
 
 export default function NotificationBell() {
+  const t = useTranslations('Notifications')
+  const locale = useLocale()
   const { user, token } = useAuth()
   const [upcoming, setUpcoming] = useState([])
   const [pendingReviews, setPendingReviews] = useState([])
@@ -109,8 +113,8 @@ export default function NotificationBell() {
         <button
           className={styles.bell}
           onClick={() => setOpen((v) => !v)}
-          aria-label="Notifications"
-          title="Notifications"
+          aria-label={t('label')}
+          title={t('label')}
         >
           🔔
           {totalCount > 0 && (
@@ -123,27 +127,27 @@ export default function NotificationBell() {
         {open && (
           <div className={styles.dropdown}>
             {/* ── Upcoming ── */}
-            <div className={styles.dropHeader}>Upcoming appointments</div>
+            <div className={styles.dropHeader}>{t('upcoming')}</div>
             {upcoming.length === 0 ? (
-              <p className={styles.empty}>No upcoming appointments</p>
+              <p className={styles.empty}>{t('noUpcoming')}</p>
             ) : (
               <ul className={styles.list}>
                 {upcoming.map((a) => {
-                  const { date, time } = formatSlot(a.time_slot)
+                  const { date, time } = formatSlot(a.time_slot, locale)
                   const cancellable = isCancellable(a.time_slot)
                   return (
                     <li key={a.id} className={`${styles.item} ${cancellable ? styles.cancellableItem : ''}`}>
                       <div className={styles.apptInfo}>
                         <span className={styles.itemDoctor}>{a.psychologist_name}</span>
-                        <span className={styles.itemDate}>{date}{time ? ` at ${time}` : ''}</span>
+                        <span className={styles.itemDate}>{date}{time ? ` ${t('at')} ${time}` : ''}</span>
                       </div>
                       {cancellable && (
                         <button
                           className={styles.cancelBtn}
                           onClick={() => { setCancelTarget(a); setOpen(false) }}
-                          aria-label="Cancel appointment"
+                          aria-label={t('cancelLabel')}
                         >
-                          Cancel
+                          {t('cancel')}
                         </button>
                       )}
                     </li>
@@ -155,27 +159,27 @@ export default function NotificationBell() {
             {/* ── Pending reviews ── */}
             {pendingReviews.length > 0 && (
               <>
-                <div className={styles.dropHeader}>Rate your sessions</div>
+                <div className={styles.dropHeader}>{t('rateSessions')}</div>
                 <ul className={styles.list}>
                   {pendingReviews.map((a) => {
-                    const { date, time } = formatSlot(a.time_slot)
+                    const { date, time } = formatSlot(a.time_slot, locale)
                     return (
                       <li key={a.id} className={`${styles.item} ${styles.reviewItem}`}>
                         <div className={styles.reviewInfo}>
                           <span className={styles.itemDoctor}>{a.psychologist_name}</span>
-                          <span className={styles.itemDate}>{date}{time ? ` at ${time}` : ''}</span>
+                          <span className={styles.itemDate}>{date}{time ? ` ${t('at')} ${time}` : ''}</span>
                         </div>
                         <div className={styles.reviewActions}>
                           <button
                             className={styles.reviewBtn}
                             onClick={() => { setReviewTarget(a); setOpen(false) }}
                           >
-                            ★ Review
+                            ★ {t('review')}
                           </button>
                           <button
                             className={styles.dismissBtn}
                             onClick={() => handleDismiss(a.id)}
-                            aria-label="Dismiss"
+                            aria-label={t('dismiss')}
                           >
                             ✕
                           </button>

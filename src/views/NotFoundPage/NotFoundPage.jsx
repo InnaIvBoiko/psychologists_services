@@ -1,20 +1,19 @@
+import { useTranslations } from 'next-intl'
 import { Link } from '@/lib/router'
 import styles from './NotFoundPage.module.css'
 
 export default function NotFoundPage() {
+  const t = useTranslations('NotFound')
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
         <div className={styles.code}>
           4<span className={styles.icon}>🧠</span>4
         </div>
-        <h1 className={styles.title}>Page not found</h1>
-        <p className={styles.description}>
-          The page you are looking for doesn&apos;t exist or has been moved.
-          Let&apos;s get you back on track.
-        </p>
+        <h1 className={styles.title}>{t('title')}</h1>
+        <p className={styles.description}>{t('description')}</p>
         <Link to="/" className={styles.btn}>
-          Go to Home
+          {t('home')}
         </Link>
       </div>
     </div>

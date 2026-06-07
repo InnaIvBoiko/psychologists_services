@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { addReview } from '@/lib/api'
 import Modal from '../Modal/Modal.jsx'
 import styles from './ReviewModal.module.css'
 
 export default function ReviewModal({ appointment, onClose, onSubmitted }) {
+  const t = useTranslations('ReviewModal')
   const { user, token } = useAuth()
   const [reviewer, setReviewer] = useState(
     appointment.patient_name || user?.displayName || user?.username || ''
@@ -17,9 +19,9 @@ export default function ReviewModal({ appointment, onClose, onSubmitted }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!reviewer.trim()) { setError('Please enter your name'); return }
-    if (!rating) { setError('Please select a rating'); return }
-    if (!comment.trim()) { setError('Please write a comment'); return }
+    if (!reviewer.trim()) { setError(t('errName')); return }
+    if (!rating) { setError(t('errRating')); return }
+    if (!comment.trim()) { setError(t('errComment')); return }
     setLoading(true)
     setError('')
     try {
@@ -36,22 +38,23 @@ export default function ReviewModal({ appointment, onClose, onSubmitted }) {
       onSubmitted?.(appointment.id)
       onClose()
     } catch (err) {
-      setError('Failed to submit review. Please try again.')
+      setError(t('errSubmit'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal onClose={onClose} title="Leave a review">
+    <Modal onClose={onClose} title={t('title')}>
       <div className={styles.content}>
         <p className={styles.doctorName}>{appointment.psychologist_name}</p>
-        <p className={styles.subtitle}>How was your session? Your feedback helps others find the right psychologist.</p>
+        <p className={styles.subtitle}>{t('subtitle')}</p>
 
         <form onSubmit={handleSubmit} noValidate className={styles.form}>
           <input
             className="input-field"
-            placeholder="Your name"
+            placeholder={t('namePlaceholder')}
+            aria-label={t('namePlaceholder')}
             value={reviewer}
             onChange={(e) => setReviewer(e.target.value)}
           />
@@ -65,21 +68,22 @@ export default function ReviewModal({ appointment, onClose, onSubmitted }) {
                 onMouseEnter={() => setHovered(star)}
                 onMouseLeave={() => setHovered(0)}
                 onClick={() => setRating(star)}
-                aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                aria-label={t('starLabel', { count: star })}
               >
                 ★
               </button>
             ))}
             {rating > 0 && (
               <span className={styles.ratingLabel}>
-                {['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'][rating]}
+                {t(`rating${rating}`)}
               </span>
             )}
           </div>
 
           <textarea
             className={`input-field ${styles.textarea}`}
-            placeholder="Share your experience with this psychologist…"
+            placeholder={t('commentPlaceholder')}
+            aria-label={t('commentPlaceholder')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={4}
@@ -93,7 +97,7 @@ export default function ReviewModal({ appointment, onClose, onSubmitted }) {
             style={{ width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Submitting…' : 'Submit review'}
+            {loading ? t('submitting') : t('submit')}
           </button>
         </form>
       </div>

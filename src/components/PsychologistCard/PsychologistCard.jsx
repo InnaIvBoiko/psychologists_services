@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useFavorites } from '../../hooks/useFavorites.js'
 import AppointmentModal from '../AppointmentModal/AppointmentModal.jsx'
 import styles from './PsychologistCard.module.css'
 
 export default function PsychologistCard({ psychologist, onToast }) {
+  const t = useTranslations('Card')
   const { user } = useAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
   const [expanded, setExpanded] = useState(false)
@@ -17,7 +19,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      onToast?.('Please log in to add to favorites')
+      onToast?.(t('loginForFavorite'))
       return
     }
     // Execute the toggle
@@ -25,15 +27,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
   }
 
   const ratingValue = Number(psychologist.rating) || 0
-
-  const stars = Array.from({ length: 5 }, (_, i) => {
-    const filled = i < Math.round(ratingValue)
-    return (
-      <span key={i} className={filled ? styles.starFilled : styles.starEmpty}>
-        ★
-      </span>
-    )
-  })
+  const favLabel = fav ? t('removeFavorite') : t('addFavorite')
 
   // Avatars are plain remote URLs stored on the psychologist record.
   const avatarUrl = psychologist.avatar;
@@ -49,7 +43,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
               alt={psychologist.name}
               className={styles.avatar}
             />
-            <span className={styles.onlineDot} aria-label="Online" />
+            <span className={styles.onlineDot} role="img" aria-label={t('online')} />
           </div>
         </div>
 
@@ -58,23 +52,24 @@ export default function PsychologistCard({ psychologist, onToast }) {
           {/* Top row */}
           <div className={styles.topRow}>
             <div>
-              <p className={styles.categoryLabel}>Psychologist</p>
+              <p className={styles.categoryLabel}>{t('label')}</p>
               <h3 className={styles.name}>{psychologist.name}</h3>
             </div>
             <div className={styles.metaRight}>
               <div className={styles.rating}>
-                <span className={styles.starFilled}>★</span>
+                <span className={styles.starFilled} aria-hidden="true">★</span>
                 <span>{ratingValue.toFixed(2)}</span>
               </div>
               <div className={styles.price}>
-                Price / 1 hour:&nbsp;
+                {t('price')}&nbsp;
                 <strong>{psychologist.pricePerHour || psychologist.price_per_hour || 0}$</strong>
               </div>
               <button
                 className={`${styles.heartBtn} ${fav ? styles.heartActive : ''}`}
                 onClick={handleFav}
-                aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
-                title={fav ? 'Remove from favorites' : 'Add to favorites'}
+                aria-label={favLabel}
+                aria-pressed={fav}
+                title={favLabel}
               >
                 ♥
               </button>
@@ -84,16 +79,16 @@ export default function PsychologistCard({ psychologist, onToast }) {
           {/* Tags */}
           <div className={styles.tags}>
             <span className="tag">
-              Experience: <strong>{psychologist.experienceYears || psychologist.experience || 0}&nbsp;years</strong>
+              {t('experience')} <strong>{t('years', { count: psychologist.experienceYears || psychologist.experience || 0 })}</strong>
             </span>
             <span className="tag">
               {psychologist.license}
             </span>
             <span className="tag">
-              Specialization: <strong>{psychologist.specialization}</strong>
+              {t('specialization')} <strong>{psychologist.specialization}</strong>
             </span>
             <span className="tag">
-              Initial consultation: <strong>{psychologist.initial_consultation}</strong>
+              {t('consultation')} <strong>{psychologist.initial_consultation}</strong>
             </span>
           </div>
 
@@ -106,8 +101,9 @@ export default function PsychologistCard({ psychologist, onToast }) {
           <button
             className={styles.readMoreBtn}
             onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
           >
-            {expanded ? 'Show less' : 'Read more'}
+            {expanded ? t('showLess') : t('readMore')}
           </button>
 
           {/* Expanded section */}
@@ -122,11 +118,12 @@ export default function PsychologistCard({ psychologist, onToast }) {
                           {r.reviewer?.[0]?.toUpperCase() || 'A'}
                         </div>
                         <div>
-                          <p className={styles.reviewerName}>{r.reviewer || 'Anonymous'}</p>
+                          <p className={styles.reviewerName}>{r.reviewer || t('anonymous')}</p>
                           <div className={styles.reviewStars}>
                             {Array.from({ length: 5 }, (_, idx) => (
                               <span
                                 key={idx}
+                                aria-hidden="true"
                                 className={idx < r.rating ? styles.starFilled : styles.starEmpty}
                               >
                                 ★
@@ -146,7 +143,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
                 className="btn btn-primary"
                 onClick={() => setShowAppointment(true)}
               >
-                Make an appointment
+                {t('makeAppointment')}
               </button>
             </div>
           )}
@@ -157,7 +154,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
         <AppointmentModal
           psychologist={psychologist}
           onClose={() => setShowAppointment(false)}
-          onSuccess={() => onToast?.('Appointment booked! We will be in touch.')}
+          onSuccess={() => onToast?.(t('appointmentBooked'))}
         />
       )}
     </>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Modal from '../Modal/Modal.jsx'
 import styles from './DeleteAccountModal.module.css'
 
 export default function DeleteAccountModal({ onClose, onConfirm, isPsychologist }) {
+  const t = useTranslations('DeleteAccountModal')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -12,30 +14,24 @@ export default function DeleteAccountModal({ onClose, onConfirm, isPsychologist 
     try {
       await onConfirm()
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.')
+      setError(err.message || t('genericError'))
       setLoading(false)
     }
   }
 
   return (
-    <Modal onClose={onClose} title="Delete account">
+    <Modal onClose={onClose} title={t('title')}>
       <div className={styles.content}>
-        <div className={styles.icon}>⚠️</div>
-        <h2 className={styles.title}>Delete your account?</h2>
+        <div className={styles.icon} aria-hidden="true">⚠️</div>
+        <h2 className={styles.title}>{t('heading')}</h2>
         <p className={styles.text}>
-          This will permanently delete your account and all associated data,
-          including your appointments and favourites.
-          <strong> This action cannot be undone.</strong>
+          {t.rich('text', { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
 
         {isPsychologist && (
           <div className={styles.psychologistNotice}>
-            <span className={styles.psychologistNoticeIcon}>🩺</span>
-            <p>
-              Your psychologist profile is currently listed on the platform.
-              It will be <strong>removed from the listings within 2–3 business days</strong>.
-              You will be contacted at your registered email once it is taken down.
-            </p>
+            <span className={styles.psychologistNoticeIcon} aria-hidden="true">🩺</span>
+            <p>{t.rich('psychologistNotice', { b: (chunks) => <strong>{chunks}</strong> })}</p>
           </div>
         )}
 
@@ -47,14 +43,14 @@ export default function DeleteAccountModal({ onClose, onConfirm, isPsychologist 
             onClick={onClose}
             disabled={loading}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             className={styles.deleteBtn}
             onClick={handleConfirm}
             disabled={loading}
           >
-            {loading ? 'Deleting…' : 'Yes, delete my account'}
+            {loading ? t('deleting') : t('confirm')}
           </button>
         </div>
       </div>

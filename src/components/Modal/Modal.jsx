@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import styles from './Modal.module.css'
 
 export default function Modal({ onClose, children, title }) {
+  const t = useTranslations('Modal')
   const overlayRef = useRef(null)
 
   // Close on ESC
@@ -36,7 +38,7 @@ export default function Modal({ onClose, children, title }) {
         <button
           className={styles.closeBtn}
           onClick={onClose}
-          aria-label="Close modal"
+          aria-label={t('close')}
         >
           ✕
         </button>

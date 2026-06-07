@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from '@/lib/router'
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { checkIsUserPsychologist } from '@/lib/api'
 import AuthModal from '../AuthModal/AuthModal.jsx'
@@ -10,6 +11,8 @@ import styles from './Header.module.css'
 export default function Header() {
   const { user, logout, deleteAccount } = useAuth()
   const navigate = useNavigate()
+  const tNav = useTranslations('Nav')
+  const t = useTranslations('Header')
   const [authModal, setAuthModal] = useState(null) // 'login' | 'register' | null
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -61,7 +64,7 @@ export default function Header() {
                 `${styles.navLink} ${isActive ? styles.active : ''}`
               }
             >
-              Home
+              {tNav('home')}
             </NavLink>
             <NavLink
               to="/psychologists"
@@ -69,7 +72,7 @@ export default function Header() {
                 `${styles.navLink} ${isActive ? styles.active : ''}`
               }
             >
-              Psychologists
+              {tNav('psychologists')}
             </NavLink>
             {user && (
               <NavLink
@@ -78,7 +81,7 @@ export default function Header() {
                   `${styles.navLink} ${isActive ? styles.active : ''}`
                 }
               >
-                Favorites
+                {tNav('favorites')}
               </NavLink>
             )}
             {user?.isAdmin && (
@@ -88,7 +91,7 @@ export default function Header() {
                   `${styles.navLink} ${isActive ? styles.active : ''}`
                 }
               >
-                Admin
+                {tNav('admin')}
               </NavLink>
             )}
           </nav>
@@ -103,7 +106,7 @@ export default function Header() {
                   <button
                     className={styles.avatarBtn}
                     onClick={() => setUserMenuOpen((v) => !v)}
-                    aria-label="User menu"
+                    aria-label={t('userMenu')}
                     aria-expanded={userMenuOpen}
                   >
                     <div className={styles.avatar}>
@@ -119,22 +122,22 @@ export default function Header() {
                         className={`${styles.dropdownItem} ${styles.dropdownDanger}`}
                         onClick={handleDeleteClick}
                       >
-                        Delete account
+                        {t('deleteAccount')}
                       </button>
                     </div>
                   )}
                 </div>
                 <button className="btn btn-ghost" onClick={handleLogout}>
-                  Log out
+                  {t('logout')}
                 </button>
               </>
             ) : (
               <>
                 <button className="btn btn-ghost" onClick={() => setAuthModal('login')}>
-                  Log In
+                  {t('login')}
                 </button>
                 <button className="btn btn-primary" onClick={() => setAuthModal('register')}>
-                  Registration
+                  {t('register')}
                 </button>
               </>
             )}
@@ -146,7 +149,7 @@ export default function Header() {
             <button
               className={styles.hamburger}
               onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={menuOpen ? t('closeMenu') : t('openMenu')}
               aria-expanded={menuOpen}
             >
               <span className={`${styles.bar} ${menuOpen ? styles.barOpen1 : ''}`} />
@@ -168,7 +171,7 @@ export default function Header() {
                 }
                 onClick={closeMenu}
               >
-                Home
+                {tNav('home')}
               </NavLink>
               <NavLink
                 to="/psychologists"
@@ -177,7 +180,7 @@ export default function Header() {
                 }
                 onClick={closeMenu}
               >
-                Psychologists
+                {tNav('psychologists')}
               </NavLink>
               {user && (
                 <NavLink
@@ -187,7 +190,7 @@ export default function Header() {
                   }
                   onClick={closeMenu}
                 >
-                  Favorites
+                  {tNav('favorites')}
                 </NavLink>
               )}
               {user?.isAdmin && (
@@ -198,7 +201,7 @@ export default function Header() {
                   }
                   onClick={closeMenu}
                 >
-                  Admin
+                  {tNav('admin')}
                 </NavLink>
               )}
             </nav>
@@ -214,14 +217,14 @@ export default function Header() {
                       <span className={styles.userName}>{user.displayName}</span>
                     </div>
                     <button className="btn btn-ghost" onClick={handleLogout}>
-                      Log out
+                      {t('logout')}
                     </button>
                   </div>
                   <button
                     className={styles.mobileDeleteBtn}
                     onClick={() => { closeMenu(); handleDeleteClick() }}
                   >
-                    Delete account
+                    {t('deleteAccount')}
                   </button>
                 </>
               ) : (
@@ -230,14 +233,14 @@ export default function Header() {
                     className="btn btn-ghost"
                     onClick={() => { setAuthModal('login'); closeMenu() }}
                   >
-                    Log In
+                    {t('login')}
                   </button>
                   <button
                     className="btn btn-primary"
                     style={{ marginRight: 0 }}
                     onClick={() => { setAuthModal('register'); closeMenu() }}
                   >
-                    Registration
+                    {t('register')}
                   </button>
                 </div>
               )}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { updatePsychologistAdmin, deletePsychologistAdmin } from '@/lib/api'
 import AvailabilityEditor from '../../components/AvailabilityEditor/AvailabilityEditor.jsx'
 import Modal from '../../components/Modal/Modal.jsx'
@@ -45,6 +46,7 @@ function toForm(p) {
 }
 
 export default function AdminDashboard({ initial }) {
+  const t = useTranslations('Admin')
   const router = useRouter()
   const [list, setList] = useState(initial)
   const [editingId, setEditingId] = useState(null)
@@ -85,7 +87,7 @@ export default function AdminDashboard({ initial }) {
       // (and the public /psychologists list reflects the change).
       router.refresh()
     } catch (err) {
-      setError(err.message || 'Failed to update status')
+      setError(err.message || t('errStatus'))
     } finally {
       setBusyId(null)
     }
@@ -94,7 +96,7 @@ export default function AdminDashboard({ initial }) {
   const saveEdit = async (p) => {
     setError('')
     if (!String(form.name).trim()) {
-      setError('Name is required')
+      setError(t('errNameRequired'))
       return
     }
     setBusyId(p.id)
@@ -106,7 +108,7 @@ export default function AdminDashboard({ initial }) {
       router.refresh()
       cancelEdit()
     } catch (err) {
-      setError(err.message || 'Failed to save changes')
+      setError(err.message || t('errSave'))
     } finally {
       setBusyId(null)
     }
@@ -121,7 +123,7 @@ export default function AdminDashboard({ initial }) {
       router.refresh()
       if (editingId === p.id) cancelEdit()
     } catch (err) {
-      setError(err.message || 'Failed to delete')
+      setError(err.message || t('errDelete'))
     } finally {
       setBusyId(null)
       setDeleteTarget(null)
@@ -132,17 +134,17 @@ export default function AdminDashboard({ initial }) {
     <section className={styles.wrap}>
       <div className="container">
         <header className={styles.head}>
-          <h1 className={styles.title}>Applications</h1>
+          <h1 className={styles.title}>{t('title')}</h1>
           <p className={styles.subtitle}>
-            {list.length} profile{list.length === 1 ? '' : 's'}
-            {pendingCount > 0 && <> · <strong>{pendingCount} pending review</strong></>}
+            {t('profileCount', { count: list.length })}
+            {pendingCount > 0 && <> · <strong>{t('pendingReview', { count: pendingCount })}</strong></>}
           </p>
         </header>
 
         {error && <div className={styles.error}>{error}</div>}
 
         {list.length === 0 ? (
-          <p className={styles.empty}>No psychologist profiles yet.</p>
+          <p className={styles.empty}>{t('empty')}</p>
         ) : (
           <ul className={styles.list}>
             {list.map((p) => {
@@ -164,7 +166,7 @@ export default function AdminDashboard({ initial }) {
                       <div className={styles.nameLine}>
                         <span className={styles.name}>{p.name}</span>
                         <span className={`${styles.badge} ${p.published ? styles.badgePub : styles.badgePend}`}>
-                          {p.published ? 'Published' : 'Pending'}
+                          {p.published ? t('published') : t('pending')}
                         </span>
                       </div>
                       <div className={styles.meta}>
@@ -180,21 +182,21 @@ export default function AdminDashboard({ initial }) {
                         onClick={() => togglePublished(p)}
                         disabled={busy}
                       >
-                        {p.published ? 'Unpublish' : 'Publish'}
+                        {p.published ? t('unpublish') : t('publish')}
                       </button>
                       <button
                         className="btn btn-ghost"
                         onClick={() => (isEditing ? cancelEdit() : startEdit(p))}
                         disabled={busy}
                       >
-                        {isEditing ? 'Close' : 'Edit'}
+                        {isEditing ? t('close') : t('edit')}
                       </button>
                       <button
                         className="btn btn-danger"
                         onClick={() => setDeleteTarget(p)}
                         disabled={busy}
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </div>
@@ -203,62 +205,62 @@ export default function AdminDashboard({ initial }) {
                     <div className={styles.editor}>
                       <div className={styles.grid}>
                         <label className={styles.field}>
-                          <span>Name</span>
+                          <span>{t('fName')}</span>
                           <input className="input-field" value={form.name} onChange={set('name')} />
                         </label>
                         <label className={styles.field}>
-                          <span>Surname</span>
+                          <span>{t('fSurname')}</span>
                           <input className="input-field" value={form.surname} onChange={set('surname')} />
                         </label>
                         <label className={styles.field}>
-                          <span>Specialization</span>
+                          <span>{t('fSpecialization')}</span>
                           <select className="input-field" value={form.specialization} onChange={set('specialization')}>
-                            <option value="">—</option>
+                            <option value="">{t('fEmpty')}</option>
                             {SPECIALIZATIONS.map((s) => (
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
                         </label>
                         <label className={styles.field}>
-                          <span>Experience (years)</span>
+                          <span>{t('fExperience')}</span>
                           <input className="input-field" type="number" min="0" value={form.experience} onChange={set('experience')} />
                         </label>
                         <label className={styles.field}>
-                          <span>Price per hour ($)</span>
+                          <span>{t('fPrice')}</span>
                           <input className="input-field" type="number" min="0" value={form.price_per_hour} onChange={set('price_per_hour')} />
                         </label>
                         <label className={styles.field}>
-                          <span>License</span>
+                          <span>{t('fLicense')}</span>
                           <input className="input-field" value={form.license} onChange={set('license')} />
                         </label>
                         <label className={styles.field}>
-                          <span>Initial consultation</span>
+                          <span>{t('fConsultation')}</span>
                           <input className="input-field" value={form.initial_consultation} onChange={set('initial_consultation')} />
                         </label>
                         <label className={styles.field}>
-                          <span>Photo URL</span>
+                          <span>{t('fPhoto')}</span>
                           <input className="input-field" type="url" value={form.avatar} onChange={set('avatar')} />
                         </label>
                       </div>
 
                       <label className={styles.field}>
-                        <span>About</span>
+                        <span>{t('fAbout')}</span>
                         <textarea className="input-field" rows={4} value={form.about} onChange={set('about')} />
                       </label>
 
                       <div className={styles.toggles}>
                         <label className={styles.checkbox}>
                           <input type="checkbox" checked={form.popular} onChange={setChecked('popular')} />
-                          <span>Popular</span>
+                          <span>{t('popular')}</span>
                         </label>
                         <label className={styles.checkbox}>
                           <input type="checkbox" checked={form.isAvailable} onChange={setChecked('isAvailable')} />
-                          <span>Available for booking</span>
+                          <span>{t('available')}</span>
                         </label>
                       </div>
 
                       <div className={styles.field}>
-                        <span className={styles.availLabel}>Availability</span>
+                        <span className={styles.availLabel}>{t('availability')}</span>
                         <AvailabilityEditor
                           key={p.id}
                           value={form.availability}
@@ -268,10 +270,10 @@ export default function AdminDashboard({ initial }) {
 
                       <div className={styles.editActions}>
                         <button className="btn btn-ghost" onClick={cancelEdit} disabled={busy}>
-                          Cancel
+                          {t('cancel')}
                         </button>
                         <button className="btn btn-primary" onClick={() => saveEdit(p)} disabled={busy}>
-                          {busy ? 'Saving…' : 'Save changes'}
+                          {busy ? t('saving') : t('save')}
                         </button>
                       </div>
                     </div>
@@ -284,18 +286,21 @@ export default function AdminDashboard({ initial }) {
       </div>
 
       {deleteTarget && (
-        <Modal onClose={() => setDeleteTarget(null)} title="Delete profile">
+        <Modal onClose={() => setDeleteTarget(null)} title={t('deleteTitle')}>
           <div className={styles.confirm}>
-            <h3>Delete this profile?</h3>
+            <h3>{t('deleteHeading')}</h3>
             <p>
-              <strong>{deleteTarget.name}</strong> will be permanently removed. This cannot be undone.
+              {t.rich('deleteText', {
+                name: deleteTarget.name,
+                b: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
             <div className={styles.editActions}>
               <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)}>
-                Cancel
+                {t('deleteCancel')}
               </button>
               <button className="btn btn-danger" onClick={confirmDelete}>
-                Delete
+                {t('deleteConfirm')}
               </button>
             </div>
           </div>

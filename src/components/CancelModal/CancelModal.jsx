@@ -1,24 +1,30 @@
+import { useLocale, useTranslations } from 'next-intl'
 import Modal from '../Modal/Modal.jsx'
+import { dateLocale } from '@/i18n/format'
 import styles from './CancelModal.module.css'
 
 export default function CancelModal({ appointment, onClose, onConfirm, loading }) {
-  const { date } = formatSlot(appointment.time_slot)
+  const t = useTranslations('CancelModal')
+  const locale = useLocale()
+  const date = formatSlot(appointment.time_slot, locale)
 
   return (
-    <Modal onClose={onClose} title="Cancel appointment">
+    <Modal onClose={onClose} title={t('title')}>
       <div className={styles.content}>
         <p className={styles.question}>
-          Are you sure you want to cancel your appointment with{' '}
-          <strong>{appointment.psychologist_name}</strong> on{' '}
-          <strong>{date}</strong>?
+          {t.rich('question', {
+            name: appointment.psychologist_name,
+            date,
+            b: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
-        <p className={styles.note}>This action cannot be undone.</p>
+        <p className={styles.note}>{t('note')}</p>
         <div className={styles.actions}>
           <button className="btn" onClick={onClose} disabled={loading}>
-            Keep appointment
+            {t('keep')}
           </button>
           <button className="btn btn-danger" onClick={onConfirm} disabled={loading}>
-            {loading ? 'Cancelling…' : 'Yes, cancel'}
+            {loading ? t('cancelling') : t('confirm')}
           </button>
         </div>
       </div>
@@ -26,9 +32,9 @@ export default function CancelModal({ appointment, onClose, onConfirm, loading }
   )
 }
 
-function formatSlot(slot) {
-  if (!slot) return { date: '' }
+function formatSlot(slot, locale) {
+  if (!slot) return ''
   const [datePart] = slot.split(' ')
   const d = new Date(datePart)
-  return { date: d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }
+  return d.toLocaleDateString(dateLocale(locale), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }

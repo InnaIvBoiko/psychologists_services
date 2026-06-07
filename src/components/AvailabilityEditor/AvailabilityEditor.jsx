@@ -1,16 +1,21 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
+import { dateLocale } from '@/i18n/format'
 import { DEFAULT_AVAILABILITY, generateTimeOptions } from '../../utils/availability.js'
 import styles from './AvailabilityEditor.module.css'
 
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-const DAY_LABELS = {
-  monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
-  thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
-}
 const DURATIONS = [30, 45, 60, 90, 120]
 const TIME_OPTIONS = generateTimeOptions()
 
 export default function AvailabilityEditor({ value, onChange }) {
+  const t = useTranslations('Availability')
+  const locale = useLocale()
+  // Localized full weekday names indexed Monday→Sunday (2024-01-01 is a Monday).
+  const dayLabels = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(dateLocale(locale), { weekday: 'long' })
+    return DAY_ORDER.map((_, i) => fmt.format(new Date(2024, 0, 1 + i)))
+  }, [locale])
   const [av, setAv] = useState(() => ({ ...DEFAULT_AVAILABILITY, ...(value || {}) }))
 
   const updateDay = (day, patch) => {
@@ -28,7 +33,7 @@ export default function AvailabilityEditor({ value, onChange }) {
   return (
     <div className={styles.editor}>
       <div className={styles.days}>
-        {DAY_ORDER.map((day) => {
+        {DAY_ORDER.map((day, dayIdx) => {
           const d = av[day] || DEFAULT_AVAILABILITY[day]
           return (
             <div key={day} className={`${styles.dayRow} ${!d.enabled ? styles.disabled : ''}`}>
@@ -41,7 +46,7 @@ export default function AvailabilityEditor({ value, onChange }) {
                 <span className={styles.slider} />
               </label>
 
-              <span className={styles.dayName}>{DAY_LABELS[day]}</span>
+              <span className={styles.dayName}>{dayLabels[dayIdx]}</span>
 
               {d.enabled ? (
                 <div className={styles.times}>
@@ -66,7 +71,7 @@ export default function AvailabilityEditor({ value, onChange }) {
                   </select>
                 </div>
               ) : (
-                <span className={styles.closedLabel}>Closed</span>
+                <span className={styles.closedLabel}>{t('closed')}</span>
               )}
             </div>
           )
@@ -74,7 +79,7 @@ export default function AvailabilityEditor({ value, onChange }) {
       </div>
 
       <div className={styles.durationRow}>
-        <span className={styles.durationLabel}>Session duration</span>
+        <span className={styles.durationLabel}>{t('sessionDuration')}</span>
         <div className={styles.durationOptions}>
           {DURATIONS.map((d) => (
             <button
@@ -83,7 +88,7 @@ export default function AvailabilityEditor({ value, onChange }) {
               className={`${styles.durationBtn} ${av.slot_duration === d ? styles.durationActive : ''}`}
               onClick={() => updateDuration(d)}
             >
-              {d < 60 ? `${d} min` : `${d / 60}h`}
+              {d < 60 ? t('minutes', { count: d }) : t('hours', { count: d / 60 })}
             </button>
           ))}
         </div>

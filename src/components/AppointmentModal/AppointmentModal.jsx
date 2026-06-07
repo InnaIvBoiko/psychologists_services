@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { createAppointment, getBookedSlots } from '@/lib/api'
+import { dateLocale } from '@/i18n/format'
 import { generateSlots, isWorkingDay } from '../../utils/availability.js'
 import Modal from '../Modal/Modal.jsx'
 import AuthModal from '../AuthModal/AuthModal.jsx'
 import MiniCalendar from './MiniCalendar.jsx'
 import styles from './AppointmentModal.module.css'
 
-function formatDateLabel(iso) {
+function formatDateLabel(iso, locale) {
   if (!iso) return ''
   const [y, m, d] = iso.split('-')
   const date = new Date(Number(y), Number(m) - 1, Number(d))
-  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+  return date.toLocaleDateString(dateLocale(locale), { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
+  const t = useTranslations('Appointment')
+  const locale = useLocale()
   const { user, token } = useAuth()
   const [authModal, setAuthModal] = useState(null) // 'login' | 'register' | null
   const [form, setForm] = useState({
@@ -55,12 +59,12 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
 
   const validate = () => {
     const errs = {}
-    if (!form.name.trim()) errs.name = 'Required'
-    if (!form.phone.trim()) errs.phone = 'Required'
-    if (!form.email.trim()) errs.email = 'Required'
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email'
-    if (!selectedDate) errs.date = 'Please select a date'
-    if (!selectedTime) errs.time = 'Please select a meeting time'
+    if (!form.name.trim()) errs.name = t('errRequired')
+    if (!form.phone.trim()) errs.phone = t('errRequired')
+    if (!form.email.trim()) errs.email = t('errRequired')
+    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = t('errInvalidEmail')
+    if (!selectedDate) errs.date = t('errSelectDate')
+    if (!selectedTime) errs.time = t('errSelectTime')
     return errs
   }
 
@@ -87,7 +91,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
       onClose()
     } catch (error) {
       console.error(error)
-      setErrors({ api: "Failed to schedule appointment. Please try again." })
+      setErrors({ api: t('errApi') })
     } finally {
       setLoading(false)
     }
@@ -95,28 +99,22 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
 
   return (
     <>
-    <Modal onClose={onClose} title="Make an appointment">
+    <Modal onClose={onClose} title={t('title')}>
       <div className={styles.content}>
-        <h2 className={styles.title}>Make an appointment with&nbsp;a psychologist</h2>
+        <h2 className={styles.title}>{t('heading')}</h2>
         {errors.api && <div className={styles.apiError}>{errors.api}</div>}
-        <p className={styles.subtitle}>
-          You are on the verge of changing your life for the better. Fill in the short
-          form below to book your personal appointment with a professional psychologist.
-          We guarantee confidentiality and respect for your privacy.
-        </p>
+        <p className={styles.subtitle}>{t('subtitle')}</p>
 
         {!user && (
           <div className={styles.authNotice}>
-            <span className={styles.authNoticeText}>
-              Log in or register to track and cancel your appointment up to 24h before.
-            </span>
+            <span className={styles.authNoticeText}>{t('authNotice')}</span>
             <div className={styles.authNoticeActions}>
               <button
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => setAuthModal('login')}
               >
-                Log In
+                {t('login')}
               </button>
               <button
                 type="button"
@@ -124,7 +122,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
                   style={{ marginRight: '0px' }}
                 onClick={() => setAuthModal('register')}
               >
-                Register
+                {t('register')}
               </button>
             </div>
           </div>
@@ -137,7 +135,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
             className={styles.doctorAvatar}
           />
           <div>
-            <p className={styles.doctorLabel}>Your psychologist</p>
+            <p className={styles.doctorLabel}>{t('yourPsychologist')}</p>
             <p className={styles.doctorName}>{psychologist.name}</p>
           </div>
         </div>
@@ -147,7 +145,8 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
             <div className="input-group">
               <input
                 className={`input-field ${errors.name ? 'error' : ''}`}
-                placeholder="Name"
+                placeholder={t('name')}
+                aria-label={t('name')}
                 value={form.name}
                 onChange={set('name')}
               />
@@ -156,7 +155,8 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
             <div className="input-group">
               <input
                 className={`input-field ${errors.phone ? 'error' : ''}`}
-                placeholder="Phone number"
+                placeholder={t('phone')}
+                aria-label={t('phone')}
                 value={form.phone}
                 onChange={set('phone')}
                 type="tel"
@@ -168,7 +168,8 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
           <div className="input-group">
             <input
               className={`input-field ${errors.email ? 'error' : ''}`}
-              placeholder="Email"
+              placeholder={t('email')}
+              aria-label={t('email')}
               value={form.email}
               onChange={set('email')}
               type="email"
@@ -177,7 +178,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
           </div>
 
           <div className="input-group">
-            <label className={styles.timeSectionLabel}>Date</label>
+            <label className={styles.timeSectionLabel}>{t('dateLabel')}</label>
             <MiniCalendar
               selected={selectedDate}
               onChange={setSelectedDate}
@@ -188,29 +189,29 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
 
           <div className="input-group">
             <label className={styles.timeSectionLabel}>
-              Meeting time
+              {t('meetingTime')}
               {selectedDate && (
-                <span className={styles.dateChip}>{formatDateLabel(selectedDate)}</span>
+                <span className={styles.dateChip}>{formatDateLabel(selectedDate, locale)}</span>
               )}
             </label>
             {!selectedDate ? (
-              <p className={styles.selectDateHint}>Select a date first to see available slots</p>
+              <p className={styles.selectDateHint}>{t('selectDateHint')}</p>
             ) : availableSlots.length === 0 ? (
-              <p className={styles.selectDateHint}>No available slots on this day</p>
+              <p className={styles.selectDateHint}>{t('noSlots')}</p>
             ) : (
               <div className={styles.timeGrid}>
-                {availableSlots.map((t) => {
-                  const isBooked = bookedSlots.includes(t)
+                {availableSlots.map((slot) => {
+                  const isBooked = bookedSlots.includes(slot)
                   return (
                     <button
-                      key={t}
+                      key={slot}
                       type="button"
-                      className={`${styles.timeSlot} ${selectedTime === t ? styles.selected : ''} ${isBooked ? styles.booked : ''}`}
-                      onClick={() => !isBooked && setSelectedTime(t)}
+                      className={`${styles.timeSlot} ${selectedTime === slot ? styles.selected : ''} ${isBooked ? styles.booked : ''}`}
+                      onClick={() => !isBooked && setSelectedTime(slot)}
                       disabled={isBooked}
-                      title={isBooked ? 'Already booked' : undefined}
+                      title={isBooked ? t('alreadyBooked') : undefined}
                     >
-                      {t}
+                      {slot}
                     </button>
                   )
                 })}
@@ -222,7 +223,8 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
           <div className="input-group">
             <textarea
               className={`input-field ${errors.comment ? 'error' : ''}`}
-              placeholder="Comment"
+              placeholder={t('comment')}
+              aria-label={t('comment')}
               value={form.comment}
               onChange={set('comment')}
               rows={3}
@@ -235,7 +237,7 @@ export default function AppointmentModal({ psychologist, onClose, onSuccess }) {
             style={{ width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Sending…' : user ? 'Send' : 'Send as a guest'}
+            {loading ? t('sending') : user ? t('send') : t('sendGuest')}
           </button>
         </form>
       </div>

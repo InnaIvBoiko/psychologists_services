@@ -1,27 +1,29 @@
 'use client'
 
-import NextLink from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { Link as IntlLink, usePathname, useRouter } from '@/i18n/navigation'
 
-// Compatibility shim: lets the existing react-router call sites work with Next.js
-// routing by changing only the import path (from 'react-router-dom' to '@/lib/router').
+// Compatibility shim for the existing react-router-style call sites. It now delegates
+// to next-intl's locale-aware navigation, so every `to="/path"` is automatically
+// prefixed with the active locale (e.g. /en/path, /it/path) without changing callers.
 
 export function Link({ to, children, ...rest }) {
   return (
-    <NextLink href={to} {...rest}>
+    <IntlLink href={to} {...rest}>
       {children}
-    </NextLink>
+    </IntlLink>
   )
 }
 
 export function NavLink({ to, end, className, children, ...rest }) {
+  // usePathname() from next-intl returns the pathname WITHOUT the locale prefix,
+  // so comparisons stay locale-agnostic.
   const pathname = usePathname()
   const isActive = to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(to + '/')
   const cls = typeof className === 'function' ? className({ isActive }) : className
   return (
-    <NextLink href={to} className={cls} aria-current={isActive ? 'page' : undefined} {...rest}>
+    <IntlLink href={to} className={cls} aria-current={isActive ? 'page' : undefined} {...rest}>
       {children}
-    </NextLink>
+    </IntlLink>
   )
 }
 
