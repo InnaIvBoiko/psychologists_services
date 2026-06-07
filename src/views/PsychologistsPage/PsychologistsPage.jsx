@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import PsychologistCard from '../../components/PsychologistCard/PsychologistCard.jsx'
 import { getPsychologists } from '@/lib/api'
+import { useDebounce } from '../../hooks/useDebounce.js'
 import styles from './PsychologistsPage.module.css'
 
 const FILTERS = [
@@ -33,6 +34,7 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
   const [data, setData] = useState(initialPsychologists)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
   const [dropOpen, setDropOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [toast, setToast] = useState(null)
@@ -48,9 +50,9 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
     return () => window.removeEventListener('psy:review-submitted', refetch)
   }, [])
 
-  const searched = search.trim()
+  const searched = debouncedSearch.trim()
     ? data.filter((p) => {
-        const q = search.toLowerCase()
+        const q = debouncedSearch.toLowerCase()
         return (
           (p.name || '').toLowerCase().includes(q) ||
           (p.surname || '').toLowerCase().includes(q) ||
@@ -64,7 +66,7 @@ export default function PsychologistsPage({ initialPsychologists = [] }) {
   const hasMore = visibleCount < filtered.length
 
   // Reset pagination on filter or search change
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [filter, search])
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [filter, debouncedSearch])
 
   const showToast = (msg) => {
     setToast(msg)

@@ -1,0 +1,62 @@
+.page {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff3eb 0%, #f8f8f8 60%, #fff3eb 100%);
+  padding: 40px 16px;
+}
+
+.inner {
+  text-align: center;
+  max-width: 480px;
+}
+
+.icon {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 16px 0 12px;
+}
+
+.description {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Collapsible technical detail, hidden by default. */
+.details {
+  margin-top: 28px;
+  text-align: left;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.details summary {
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.details pre {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--color-tag-bg);
+  border-radius: var(--radius-input);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
