@@ -1,28 +1,37 @@
 # Testing
 
+Testing happens at two levels:
+
+- **Component / unit** — [Vitest](https://vitest.dev) + Testing Library, in `src/**`. Fast, isolated, fully mocked (no DB, no network). Covered in the bulk of this document.
+- **End-to-end** — [Playwright](https://playwright.dev) drives the real app (App Router + Auth.js + Prisma/Neon) in a browser, in `e2e/**`. See [End-to-end (Playwright)](#end-to-end-playwright).
+
+Both run in CI on every pull request (`.github/workflows/ci.yml` and `e2e.yml`).
+
 ## Stack
 
-| Tool | Purpose |
-|---|---|
-| [Vitest](https://vitest.dev) | Test runner (native Vite integration) |
-| [@testing-library/react](https://testing-library.com/react) | Render and query React components |
-| [@testing-library/jest-dom](https://testing-library.com/jest-dom) | Custom DOM matchers (`toBeInTheDocument`, `toBeDisabled`, etc.) |
-| [@testing-library/user-event](https://testing-library.com/user-event) | Simulate real user interactions |
-| jsdom | Browser-like DOM environment for Node |
+| Tool | Level | Purpose |
+|---|---|---|
+| [Vitest](https://vitest.dev) | unit | Test runner (native Vite integration) |
+| [@testing-library/react](https://testing-library.com/react) | unit | Render and query React components |
+| [@testing-library/jest-dom](https://testing-library.com/jest-dom) | unit | Custom DOM matchers (`toBeInTheDocument`, `toBeDisabled`, etc.) |
+| [@testing-library/user-event](https://testing-library.com/user-event) | unit | Simulate real user interactions |
+| jsdom | unit | Browser-like DOM environment for Node |
+| [@playwright/test](https://playwright.dev) | e2e | Browser automation + assertions against the running app |
 
 ---
 
 ## Running tests
 
 ```bash
-# Watch mode (re-runs on file change)
-npm test
+# --- Component / unit (Vitest) ---
+npm test               # watch mode (re-runs on file change)
+npm run test:run       # single run
+npm run test:coverage  # single run with coverage report
 
-# Single run
-npm run test:run
-
-# Single run with coverage report
-npm run test:coverage
+# --- End-to-end (Playwright) ---
+npm run test:e2e         # run the suite (auto-starts the app)
+npm run test:e2e:ui      # interactive UI mode
+npm run test:e2e:report  # open the last HTML report
 ```
 
 Coverage report is written to `coverage/` and opened via `coverage/index.html`.
@@ -54,7 +63,7 @@ src/
 
 > **i18n note:** components that call `useTranslations`/`useLocale` are rendered via `src/test/intl.jsx`, whose `render()` wraps them in a `NextIntlClientProvider` with the English catalog — so assertions match the real English copy. Locale-dependent expectations (e.g. `Intl` weekday names "Mon"/"Tue") were updated accordingly.
 
-**Current status:** the full suite passes — **7 test files, 58 tests green**.
+**Current status:** the full suite passes — **7 test files, 58 tests green** (component/unit). The Playwright e2e suite adds **18 tests** across 6 spec files — see [End-to-end (Playwright)](#end-to-end-playwright).
 
 ---
 
@@ -221,7 +230,7 @@ The test runner config moved from `vite.config.js` to **`vitest.config.js`**. Th
 
 **`vitest.config.js`**
 ```js
-import { defineConfig } from 'vite'
+import { defineConfig, configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
@@ -236,9 +245,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.js',
+    // Playwright e2e specs live in /e2e and run via `npm run test:e2e`, not Vitest.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })
 ```
+
+> The Playwright specs are named `*.spec.js`, which Vitest's default glob would otherwise pick up. The `exclude` line keeps the two runners from colliding — Vitest owns `src/**`, Playwright owns `e2e/**`.
 
 **`src/test/setup.js`** (unchanged)
 ```js
@@ -246,3 +259,71 @@ import '@testing-library/jest-dom'
 ```
 
 Imports jest-dom matchers globally so every test file can use `.toBeInTheDocument()`, `.toBeDisabled()`, etc. without importing them manually.
+
+---
+
+## End-to-end (Playwright)
+
+E2E tests exercise the application as a user does: a real browser, the real Next.js server, the real database. They complement — not replace — the mocked component tests above.
+
+### Running
+
+```bash
+npm run test:e2e         # headless run (auto-starts the app)
+npm run test:e2e:ui      # interactive UI mode (watch, time-travel)
+npm run test:e2e:report  # open the last HTML report
+```
+
+First run only, install the browser binary:
+
+```bash
+npx playwright install chromium
+```
+
+The app is started automatically by Playwright's `webServer` (`playwright.config.js`). Locally an already-running dev server on `:3000` is **reused**, so the suite starts instantly; otherwise `npm run dev` is launched. The suite expects the database to be **migrated and seeded** (`npx prisma migrate deploy && npm run db:seed`).
+
+### Layout
+
+```
+e2e/
+├── helpers.js            # uniqueEmail(), openAuthModal(), registerNewUser() + constants
+├── global-teardown.js    # Prisma sweep of leftover test users (e2e- email prefix)
+├── home.spec.js          # hero, CTAs, bare-root → locale redirect
+├── navigation.spec.js    # header links, member-only links hidden, unknown route → 404
+├── psychologists.spec.js # server-rendered list, search, "Load more", A→Z sort
+├── i18n.spec.js          # en ↔ it language switch, cookie persistence, IT deep links
+├── auth.spec.js          # modal UI + validation, self-cleaning register→delete lifecycle
+└── protected-routes.spec.js  # /favorites guest redirect, /admin hidden for non-admins
+```
+
+### What is tested (18 tests)
+
+| Spec | Scenarios |
+|---|---|
+| `home` | Hero headline/CTAs/stats render · "Get started" routes to the list · `/` redirects to a locale-prefixed URL |
+| `navigation` | Public nav links shown, Favorites/Admin hidden when logged out · Psychologists link routes to the list · unknown route renders the not-found page (404) |
+| `psychologists` | Server-renders the first page (3 of the seeded set) with "Load more" · "Load more" reveals the next page · search filters and clears (incl. empty state) · filter dropdown sorts A→Z |
+| `i18n` | Language switcher moves en ↔ it and translates nav/content · choice persists across reload (cookie) · Italian deep links render directly |
+| `auth` | Login modal opens, switches to register, validates empty submit · demo-admin "Fill in" prefills the form · **lifecycle:** register a fresh account → session survives reload → delete account via the UI → confirm login then fails |
+| `protected-routes` | `/favorites` redirects guests home · `/admin` renders the not-found page for non-admins |
+
+### Database hygiene
+
+There is no separate test database — e2e runs against the same Postgres the app uses. Two safeguards keep it clean:
+
+1. **Self-cleaning lifecycle.** The auth test registers a throwaway account with a unique, prefixed email (`e2e-…@playwright.test`) and deletes it through the UI at the end of the test.
+2. **Global teardown.** `e2e/global-teardown.js` runs after the suite and removes (via Prisma) any user whose email still carries the `e2e-` prefix — a safety net for a test that failed mid-flow. Cleanup failures are logged, not fatal.
+
+### Two gotchas worth knowing
+
+- **`notFound()` on a `force-dynamic` route streams HTTP 200.** The `/admin` page calls `notFound()` for non-admins, but because the route is dynamic the document status is 200, not 404. The test asserts on the rendered not-found **content** ("Page not found") rather than the status code. (A genuinely unknown route — handled by the router, not streamed — does return 404, and `navigation.spec.js` asserts that.)
+- **Role-name matching is a substring.** `getByRole('link', { name: 'Psychologists' })` also matches the `psychologists.services` logo link, so the nav assertions pass `{ exact: true }`.
+
+### CI
+
+`.github/workflows/e2e.yml` runs the suite on every PR and on push to `main`:
+
+- Spins up a disposable **`postgres:16` service container** (no production secrets — `DATABASE_URL`, `AUTH_SECRET`, etc. are throwaway CI values; Upstash/Resend are left unset and degrade to no-ops).
+- `prisma migrate deploy` → `npm run db:seed` → `npx playwright install --with-deps chromium` → `npm run build`.
+- Runs against the **production server** (`PLAYWRIGHT_WEB_SERVER=npm run start`) instead of `next dev`, avoiding slow first-request compilation.
+- Uploads `playwright-report/` as a build artifact (kept 7 days), even on failure.

@@ -17,6 +17,12 @@ dist-ssr
 out
 next-env.d.ts
 
+# Playwright
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

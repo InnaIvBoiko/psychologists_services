@@ -80,15 +80,31 @@ Neon's free tier suspends idle compute, but it **resumes in ~0.5s** on the next 
 | Script | Command | Purpose |
 |---|---|---|
 | `dev` | `next dev` | Local development server. |
-| `build` | `prisma generate && next build` | Production build (run by Vercel). |
+| `build` | `prisma generate && prisma migrate deploy && next build` | Production build (run by Vercel); applies pending migrations first. |
 | `start` | `next start` | Run the production build locally. |
 | `db:push` | `prisma db push` | Sync schema to the database (creates tables). |
 | `db:migrate` | `prisma migrate dev` | Create/apply a dev migration. |
 | `db:seed` | `node prisma/seed.js` | Seed psychologists from `src/data/psychologists.json`. |
 | `db:studio` | `prisma studio` | Browse the database in Prisma Studio. |
-| `test` | `vitest` | Run tests in watch mode. |
-| `test:run` | `vitest run` | Run tests once. |
-| `test:coverage` | `vitest run --coverage` | Run tests with coverage. |
+| `test` | `vitest` | Run component/unit tests in watch mode. |
+| `test:run` | `vitest run` | Run component/unit tests once. |
+| `test:coverage` | `vitest run --coverage` | Run component/unit tests with coverage. |
+| `test:e2e` | `playwright test` | Run the Playwright end-to-end suite (auto-starts the app). |
+| `test:e2e:ui` | `playwright test --ui` | Run the e2e suite in interactive UI mode. |
+| `test:e2e:report` | `playwright show-report` | Open the last e2e HTML report. |
+
+---
+
+## Continuous integration
+
+Two GitHub Actions workflows run on every pull request and on push to `main`:
+
+| Workflow | Job | What it does |
+|---|---|---|
+| `.github/workflows/ci.yml` | Lint & Test | `npm ci` → `npm run lint` → `npm run test:run` (component/unit; a dummy `DATABASE_URL` is enough — these tests never hit the DB). |
+| `.github/workflows/e2e.yml` | Playwright | Spins up a disposable `postgres:16` service container, runs `prisma migrate deploy` + `db:seed`, builds the app, and runs `npm run test:e2e` against the production server. No production secrets are used — all CI env values are throwaway, and Upstash/Resend are left unset (they degrade to no-ops). The HTML report is uploaded as a build artifact. |
+
+See [`TESTING.md`](TESTING.md) for the full e2e breakdown.
 
 ---
 

@@ -209,6 +209,8 @@ src/
 │   ├── serialize.js    # Adds id / documentId / strapiId to records
 │   └── availability.js # Slot generation and working-hours logic
 └── utils/
+e2e/                    # Playwright end-to-end specs, helpers, global teardown
+.github/workflows/      # CI — ci.yml (lint + unit), e2e.yml (Playwright)
 ```
 
 > ### Before (Strapi) — history
