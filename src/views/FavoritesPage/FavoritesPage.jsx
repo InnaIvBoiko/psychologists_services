@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from '@/lib/router'
 import PsychologistCard from '../../components/PsychologistCard/PsychologistCard.jsx'
+import { PsychologistCardSkeletonList } from '../../components/PsychologistCard/PsychologistCardSkeleton.jsx'
 import { useFavorites } from '../../hooks/useFavorites.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { getPsychologists } from '@/lib/api'
@@ -44,9 +45,7 @@ export default function FavoritesPage() {
         <h1 className={styles.pageTitle}>Favorites</h1>
 
         {loading ? (
-          <div className={styles.loaderWrap}>
-            <div className={styles.spinner} />
-          </div>
+          <PsychologistCardSkeletonList count={2} />
         ) : favorites.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>💙</div>

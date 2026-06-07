@@ -93,7 +93,7 @@ export default function PsychologistCard({ psychologist, onToast }) {
               Specialization: <strong>{psychologist.specialization}</strong>
             </span>
             <span className="tag">
-              Initial_consultation: <strong>{psychologist.initial_consultation}</strong>
+              Initial consultation: <strong>{psychologist.initial_consultation}</strong>
             </span>
           </div>
 
