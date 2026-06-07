@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { sendAppointmentConfirmation } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,6 +59,16 @@ export async function POST(req) {
       psychologist_id: String(b.psychologist_id),
       psychologist_name: String(b.psychologist_name),
     },
+  })
+
+  // Best-effort confirmation email. Awaited (fire-and-forget is unreliable on
+  // serverless, which may freeze the function after the response) but it never
+  // throws, so a mail failure can't fail an otherwise-successful booking.
+  await sendAppointmentConfirmation({
+    to: created.email,
+    patientName: created.patient_name,
+    psychologistName: created.psychologist_name,
+    timeSlot: created.time_slot,
   })
 
   return NextResponse.json({ ...created, documentId: String(created.id) })

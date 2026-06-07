@@ -8,7 +8,7 @@ export default function PrivacyPage() {
         <Link to="/" className={styles.back}>← Back to Home</Link>
 
         <h1 className={styles.title}>Privacy Policy</h1>
-        <p className={styles.updated}>Last updated: June 6, 2026</p>
+        <p className={styles.updated}>Last updated: June 7, 2026</p>
 
         <section className={styles.section}>
           <h2>1. Introduction</h2>
@@ -34,6 +34,7 @@ export default function PrivacyPage() {
           <ul>
             <li>To create and manage your account.</li>
             <li>To book and manage appointments with psychologists.</li>
+            <li>To send you a confirmation email when you book an appointment.</li>
             <li>To save your favourite psychologists across sessions.</li>
             <li>To show your booked appointments in the notification area.</li>
             <li>To process and manage psychologist applications.</li>
@@ -62,6 +63,11 @@ export default function PrivacyPage() {
             <li>
               <strong>Vercel</strong> — our hosting provider for the application and its API. Network
               request logs may be retained by Vercel for security purposes.
+            </li>
+            <li>
+              <strong>Resend</strong> — our email provider. When you book an appointment, your name,
+              email address and appointment details are sent to Resend solely to deliver the
+              confirmation email.
             </li>
           </ul>
           <p>We do not sell or share your personal data with any other third parties.</p>
