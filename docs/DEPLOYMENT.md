@@ -28,13 +28,20 @@ Every push to `main` triggers an automatic redeploy.
 
 ### Environment variables (Vercel → Settings → Environment Variables)
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Neon **pooled** connection string (see below). |
-| `AUTH_SECRET` | Auth.js secret. Generate with `npx auth secret`. |
-| `AUTH_URL` | **Not required** — Vercel sets this automatically. |
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | ✅ | Neon **pooled** connection string (see below). |
+| `DIRECT_URL` | ✅ | Neon **direct** (non-pooled) string — same host without `-pooler`; used by `prisma migrate deploy`. |
+| `AUTH_SECRET` | ✅ | Auth.js secret. Generate with `npx auth secret`. |
+| `ADMIN_EMAILS` | ✅ | Comma-separated emails allowed into `/admin`. |
+| `AUTH_URL` | — | **Not required** — Vercel sets this automatically. |
+| `RESEND_API_KEY` | optional | Enables booking confirmation emails. Unset → emails are a no-op. |
+| `EMAIL_FROM` | optional | Sender address. Empty → Resend sandbox sender (delivers only to your own Resend account email). Set `"Name <no-reply@yourdomain.com>"` after verifying a domain. |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | optional | Enables rate limiting. Unset → limiting is off. |
 
-> Use the **pooled** connection string from the Neon dashboard (the host ends in `-pooler`). Serverless functions open many short-lived connections, and the pooler is what keeps that within Neon's limits.
+> Use the **pooled** connection string from the Neon dashboard (the host ends in `-pooler`). Serverless functions open many short-lived connections, and the pooler is what keeps that within Neon's limits. `prisma migrate` needs the **direct** URL because the pooler can't hold migration advisory locks.
+>
+> The optional services **degrade gracefully**: with their vars unset, the feature is skipped and the app keeps working.
 
 ---
 

@@ -22,8 +22,12 @@ A full-stack web application to browse and book sessions with licensed psycholog
 - **Psychologist Working Hours** — Each psychologist defines their own schedule (days, hours, session duration); slots are generated dynamically from that schedule
 - **Authentication** — Register and log in with email/password via **Auth.js** (cookie session, login persists across reloads)
 - **Notification Bell** — View upcoming appointments directly in the header
-- **Apply as Psychologist** — Submit a professional application including availability schedule; saved **unpublished** (hidden from the list) pending approval
+- **Apply as Psychologist** — Submit a professional application including availability schedule; saved **unpublished** (hidden from the list) pending approval. If not logged in, the login window opens **inline** without losing the form
 - **Admin Approval** — An admin (email allowlist via `ADMIN_EMAILS`) can review applications on `/admin`: **publish/unpublish**, edit any field, or delete a profile
+- **Confirmation Emails** — A booking confirmation email is sent via **Resend** (optional; no-op without an API key, so bookings always succeed)
+- **Internationalization (IT/EN)** — Full UI translation with **next-intl**, locale-prefixed routes (`/en`, `/it`), and a language switcher; dates/months are localized via `Intl`
+- **Accessibility** — Skip-to-content link, dynamic `<html lang>`, ARIA labels/states on interactive controls, keyboard-friendly dropdowns, `prefers-reduced-motion` support
+- **Loading & Error UX** — Skeleton placeholders while data loads, route-level error boundaries with retry, and a debounced search
 - **404 Page** — Custom not-found page
 - **Privacy & GDPR** — Cookie consent banner, Privacy Policy page (`/privacy`), consent checkboxes on registration and application forms
 - **Right to Erasure** — Logged-in users can permanently delete their account and all associated data via the user menu
@@ -36,9 +40,12 @@ A full-stack web application to browse and book sessions with licensed psycholog
 |---|---|
 | Framework | **Next.js 14** (App Router) — UI **and** API in one project |
 | UI | React 18, CSS Modules |
+| i18n | **next-intl v4** — locale-prefixed routing (`/en`, `/it`), middleware, message catalogs |
 | Auth | **Auth.js v5** (NextAuth) — Credentials provider, JWT session, `bcryptjs` |
 | ORM | **Prisma 5** |
 | Database | **Neon** (serverless PostgreSQL) |
+| Email | **Resend** (free tier) — transactional booking confirmations (optional) |
+| Rate limiting | **Upstash Redis** (free tier) — login/registration/booking caps (optional) |
 | Hosting | **Vercel** (single deployment) |
 | Tests | Vitest + Testing Library |
 
@@ -91,35 +98,52 @@ psychologists_services/
 ├── prisma/
 │   ├── schema.prisma          # User, Psychologist, Appointment models
 │   └── seed.js                # Seeds Neon from src/data/psychologists.json
+├── messages/                  # Translation catalogs (one namespace per view/component)
+│   ├── en.json
+│   └── it.json
 ├── src/
+│   ├── middleware.js          # next-intl locale detection / redirect (skips /api & static)
+│   ├── i18n/                  # next-intl config
+│   │   ├── routing.js         # Locales (en/it) + default
+│   │   ├── navigation.js      # Locale-aware Link/useRouter/usePathname
+│   │   ├── request.js         # Loads per-locale messages
+│   │   └── format.js          # locale → BCP-47 tag for Intl date formatting
 │   ├── app/                   # Next.js App Router
-│   │   ├── layout.jsx         # Root layout (fonts, metadata)
-│   │   ├── providers.jsx      # SessionProvider + AuthProvider + Header/Footer/CookieBanner
-│   │   ├── page.jsx           # Home  ("/")
-│   │   ├── psychologists/     # "/psychologists"
-│   │   ├── favorites/         # "/favorites" (protected: redirects if logged out)
-│   │   ├── privacy/           # "/privacy"
-│   │   ├── not-found.jsx      # 404
-│   │   └── api/               # Backend (Route Handlers) — see API Overview
+│   │   ├── [locale]/          # All pages are locale-prefixed (/en/…, /it/…)
+│   │   │   ├── layout.jsx     # <html lang>, fonts, localized metadata, NextIntlClientProvider
+│   │   │   ├── providers.jsx  # Skip link + SessionProvider + AuthProvider + Header/Footer/CookieBanner
+│   │   │   ├── page.jsx       # Home  ("/")
+│   │   │   ├── psychologists/ # "/psychologists" (+ loading.jsx skeleton)
+│   │   │   ├── favorites/     # "/favorites" (protected: redirects if logged out)
+│   │   │   ├── privacy/       # "/privacy"
+│   │   │   ├── admin/         # "/admin" (+ loading.jsx skeleton)
+│   │   │   ├── error.jsx      # Segment error boundary
+│   │   │   └── not-found.jsx  # 404
+│   │   ├── global-error.jsx   # Last-resort boundary (renders own <html>)
+│   │   ├── icon.svg           # Favicon (App Router file convention)
+│   │   └── api/               # Backend (Route Handlers) — NOT locale-prefixed; see API Overview
 │   │       ├── auth/[...nextauth]/   # Auth.js login/session
 │   │       ├── register/             # Email/password sign-up
 │   │       ├── me/                   # Profile (favorites, dismissed, isPsychologist) + delete account
 │   │       ├── psychologists/        # List, application, detail, toggle-favorite, reviews
-│   │       ├── appointments/         # Booked slots, create, mine, cancel
+│   │       ├── appointments/         # Booked slots, create (+ confirmation email), mine, cancel
 │   │       └── reviews/dismiss/      # Dismiss a review prompt
 │   ├── lib/
 │   │   ├── api.js             # Frontend data layer (same-origin fetch)
 │   │   ├── auth.js            # Auth.js config (Credentials + JWT session)
+│   │   ├── email.js          # Resend confirmation email (optional, best-effort)
+│   │   ├── rateLimit.js      # Upstash Redis rate limiting (optional)
 │   │   ├── prisma.js          # PrismaClient singleton
-│   │   ├── router.jsx         # react-router → next/navigation shim
+│   │   ├── router.jsx         # react-router shim → next-intl locale-aware navigation
 │   │   └── serialize.js       # Adds id/documentId/strapiId to psychologist responses
-│   ├── components/           # UI components (unchanged from before)
-│   ├── views/                # Page bodies (formerly src/pages/)
+│   ├── components/           # UI components (Header has LanguageSwitcher; Skeleton/* placeholders)
+│   ├── views/                # Page bodies (formerly src/pages/); includes ErrorState
 │   ├── context/AuthContext.jsx  # Same context shape, now backed by Auth.js
-│   ├── hooks/useFavorites.js
+│   ├── hooks/                # useFavorites, useDebounce
 │   ├── utils/availability.js # Slot/working-hours logic (unchanged)
+│   ├── test/intl.jsx         # Test helper: render wrapped in NextIntlClientProvider
 │   └── data/psychologists.json  # Seed data
-├── next.config.js
+├── next.config.js            # Wraps config with the next-intl plugin
 ├── jsconfig.json             # "@/*" → ./src/*
 ├── vitest.config.js          # Vitest runs the test suite (app builds with Next)
 └── .env.example
@@ -157,8 +181,10 @@ npm run db:seed      # import the 15 psychologists from src/data/psychologists.j
 
 ### 4. Run
 ```bash
-npm run dev          # http://localhost:3000
+npm run dev          # http://localhost:3000  → redirects to /en (or /it)
 ```
+
+> Tip: after switching branches or changing `next.config.js`, clear the Next cache if the dev server misbehaves: `rm -rf .next && npm run dev`.
 
 ---
 
@@ -167,6 +193,8 @@ npm run dev          # http://localhost:3000
 ```env
 # Neon — use the POOLED connection string from the Neon dashboard
 DATABASE_URL="postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
+# Direct (non-pooled) connection — same host WITHOUT `-pooler`; used only by `prisma migrate`
+DIRECT_URL="postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require"
 
 # Auth.js — generate with: npx auth secret
 AUTH_SECRET="a-long-random-string"
@@ -176,9 +204,23 @@ AUTH_SECRET="a-long-random-string"
 
 # Admin allowlist — comma-separated emails that may access /admin (publish/edit/delete applications)
 ADMIN_EMAILS="admin@example.com"
+
+# --- Optional services (the app works without them) ---
+
+# Resend (free tier) — booking confirmation emails. If unset, emails are disabled.
+RESEND_API_KEY=""
+# Sender address. Empty → sandbox sender (delivers only to your own Resend account email).
+# Verify a domain in Resend to send to any recipient: "Name <no-reply@yourdomain.com>".
+EMAIL_FROM=""
+
+# Upstash Redis (free tier) — anti brute-force rate limiting. If unset, limiting is disabled.
+UPSTASH_REDIS_REST_URL=""
+UPSTASH_REDIS_REST_TOKEN=""
 ```
 
 > Unlike the old Vite setup (which baked `VITE_*` vars at build time), these are read **at runtime** on the server, so the database URL and secret never reach the browser.
+>
+> The three optional services (**Resend**, **Upstash**) **degrade gracefully**: when their env vars are missing the related feature becomes a no-op (emails are skipped, rate limiting is off) and the rest of the app keeps working — ideal for local dev and preview deploys.
 
 ---
 
@@ -194,7 +236,7 @@ All endpoints live under `src/app/api/` and are called from `src/lib/api.js` (sa
 | `togglePsychologistFavorite(id)` 🔒 | POST | `/api/psychologists/:id/toggle-favorite` |
 | `addReview(id, review)` 🔒 | POST | `/api/psychologists/:id/reviews` |
 | `getBookedSlots(psychId, date)` | GET | `/api/appointments?psychologist_id=&date=` |
-| `createAppointment(data)` | POST | `/api/appointments` (guests allowed; rate-limited) |
+| `createAppointment(data)` | POST | `/api/appointments` (guests allowed; rate-limited; sends a confirmation email) |
 | `getUserAppointments()` 🔒 | GET | `/api/appointments/mine` |
 | `getPastAppointmentsForReview()` 🔒 | GET | `/api/appointments/mine` |
 | `cancelAppointment(id)` 🔒 | DELETE | `/api/appointments/:id` |
@@ -258,12 +300,36 @@ Handled by **Auth.js v5** (`src/lib/auth.js`):
 
 ---
 
+## Internationalization (i18n)
+
+Powered by **next-intl v4** with locale-prefixed routing.
+
+- **Locales:** `en` (default) and `it`, configured in `src/i18n/routing.js`.
+- **Routing:** every page lives under `src/app/[locale]/`, so URLs are `/en/…` and `/it/…`. `src/middleware.js` detects the locale (URL → cookie → `Accept-Language`) and redirects when it's missing; it **skips `/api` and static files**.
+- **Messages:** one JSON file per locale in `messages/`, organized into a namespace per view/component (`Home`, `Card`, `Admin`, …). Rich text (links, `<b>`) uses `t.rich`.
+- **Language switcher:** an IT/EN toggle in the home hero; the choice is persisted in a cookie by next-intl.
+- **Locale-aware navigation:** the legacy router shim (`src/lib/router.jsx`) delegates to next-intl, so existing `<Link to="/x">` / `useNavigate` call sites automatically keep the active locale — no call-site changes were needed.
+- **Dates:** weekday/month names and date formatting are localized via the `Intl` API (`src/i18n/format.js` maps `en`→`en-GB`, `it`→`it-IT`), not translation strings.
+- **Stored data stays canonical:** specialization category values remain in English (shared with the admin editor and the database); only their labels are translated.
+
+To add a locale: add it to `routing.js` and create `messages/<locale>.json`.
+
+## Accessibility
+
+- **Skip link** — a keyboard-only "skip to main content" link jumps past the nav.
+- **`<html lang>`** — set dynamically per locale in the layout.
+- **ARIA** — `aria-label`/`aria-expanded`/`aria-pressed`/`aria-current` on menus, toggles, the favorite button, and the language switcher; decorative emoji are `aria-hidden`; every form input has an accessible label.
+- **Keyboard** — dropdowns and modals close on `Escape` and outside-click; visible `:focus-visible` rings.
+- **Motion** — skeleton shimmer respects `prefers-reduced-motion`.
+
+---
+
 ## Deployment — Vercel (single project)
 
 1. Push to GitHub.
 2. Import the repository in [Vercel](https://vercel.com) (Next.js is auto-detected).
-3. Add environment variables: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAILS`.
-4. Deploy. The build runs `prisma generate && next build`.
+3. Add environment variables: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `ADMIN_EMAILS` (and optionally `RESEND_API_KEY` / `EMAIL_FROM`, `UPSTASH_REDIS_REST_URL` / `_TOKEN`).
+4. Deploy. The build runs `prisma generate && prisma migrate deploy && next build`.
 5. First time only: run `npm run db:push` and `npm run db:seed` against the Neon database (locally with the production `DATABASE_URL`, or via the Neon SQL editor).
 
 > No second backend deployment, no CORS config, and **no UptimeRobot** — Neon resumes from idle in ~0.5s, so cold starts are no longer noticeable.
@@ -275,9 +341,10 @@ Handled by **Auth.js v5** (`src/lib/auth.js`):
 | Feature | Implementation |
 |---|---|
 | Cookie consent | Banner on first visit; choice stored in `localStorage` as `cookie_consent` |
-| Privacy Policy | Static page at `/privacy` |
+| Privacy Policy | Localized page at `/privacy` — lists data collected, uses, and processors (Neon, Vercel, Resend) |
 | Consent on registration | Required checkbox linking to `/privacy` |
 | Consent on psychologist application | Required checkbox with explicit data-processing notice |
+| Confirmation email | On booking, name + email + appointment details are sent to **Resend** solely to deliver the confirmation message |
 | Right to erasure | User menu → Delete account → `DELETE /api/me` removes all appointments, any psychologist profile the user created, and the user record |
 
 ---
@@ -290,7 +357,7 @@ npm run test:run      # single run
 npm run test:coverage # coverage report
 ```
 
-The suite (Vitest + Testing Library) runs against the React components and `AuthContext`, mocking `@/lib/api` and `next-auth/react`.
+The suite (Vitest + Testing Library) runs against the React components, hooks, and library helpers (`AuthContext`, `useFavorites`, `email`, `admin`), mocking `@/lib/api` and `next-auth/react`. Components that use translations are rendered through `src/test/intl.jsx`, which wraps them in a `NextIntlClientProvider` with the English catalog.
 
 ---
 

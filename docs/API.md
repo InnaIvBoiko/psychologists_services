@@ -356,6 +356,11 @@ All fields except `comment` are required. Returns the created appointment plus a
 button). Logged-in users can additionally track and cancel their bookings via `/mine`.
 Rate-limited per IP (returns `429` when exceeded) since the endpoint is public.
 
+After the appointment is created, a **confirmation email** is sent to the booker via
+**Resend** (`src/lib/email.js`). It is best-effort: the send is awaited but never throws,
+and if `RESEND_API_KEY` is unset it is skipped entirely — so a mail failure never fails an
+otherwise-successful booking.
+
 > **Before (Strapi).** Same path but the body was wrapped in `{ "data": { ... } }`, and the
 > endpoint was open according to the Strapi role configuration rather than gated on a session.
 

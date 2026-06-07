@@ -7,7 +7,19 @@ All components use CSS Modules for scoped styling. Each component lives in its o
 > - **Routing:** components import `Link` / `NavLink` / `useNavigate` from `@/lib/router` (a thin shim over `next/navigation`) instead of `react-router-dom`. They are used exactly as before.
 > - **Page bodies:** the page components moved from `src/pages/` to `src/views/` (the name `pages/` collides with Next.js). Paths below reflect the new location.
 > - **Auth:** `AuthContext` keeps the same public API but is now backed by Auth.js (NextAuth) with cookie-based sessions. See the [AuthContext](#authcontext) note below.
-> - **App shell:** new top-level Next.js files exist — `src/app/layout.jsx` (root layout) and `src/app/providers.jsx` (wraps `SessionProvider` + `AuthProvider` + `Header` / `Footer` / `CookieBanner`).
+> - **App shell:** Next.js files live under `src/app/[locale]/` — `layout.jsx` (root layout, `<html lang>`, `NextIntlClientProvider`) and `providers.jsx` (skip link + `SessionProvider` + `AuthProvider` + `Header` / `Footer` / `CookieBanner`).
+
+> **i18n note.** UI strings come from `useTranslations('Namespace')` (next-intl), with catalogs in `messages/{en,it}.json`. Rich text uses `t.rich`; dates use the `Intl` API via `src/i18n/format.js`. Adding/renaming visible text means updating both catalogs.
+
+---
+
+## Internationalization & shared UI helpers
+
+| Component | Path | Purpose |
+|---|---|---|
+| `LanguageSwitcher` | `components/Header/LanguageSwitcher.jsx` | IT/EN toggle (rendered in the **home hero**); switches locale via next-intl navigation, persisted in a cookie |
+| `Skeleton` | `components/Skeleton/Skeleton.jsx` | Shimmer placeholder primitive (`prefers-reduced-motion` aware); `PsychologistCardSkeleton` builds card-shaped placeholders for `loading.jsx` |
+| `ErrorState` | `views/ErrorState/ErrorState.jsx` | Shared UI for `app/[locale]/error.jsx` and `global-error.jsx` — friendly message, "Try again" (reset), collapsed technical details |
 
 ---
 
@@ -174,14 +186,17 @@ Application form for psychologists who want to join the platform.
 
 **Sections:**
 1. Personal info (name, surname, photo URL)
-2. Professional details (specialization, experience, license, price, consultation type)
-3. Availability (AvailabilityEditor — sets working hours and session duration)
-4. About you (free text, min 50 characters)
+2. Account — **only when logged out**: email + password (an account is created on submit). When logged in, this is replaced by an "applying as `<email>`" note and the name is pre-filled from the account.
+3. Professional details (specialization, experience, license, price, consultation type)
+4. Availability (AvailabilityEditor — sets working hours and session duration)
+5. About you (free text, min 50 characters)
+
+**Inline login:** the "Log in first" link opens an `AuthModal` **on top of** the apply form (instead of closing it), so logging in keeps the filled-in form. On success the account section disappears automatically.
 
 **On submit:**
-- Calls `submitPsychologistApplication()` which POSTs to `/api/psychologists?status=draft`
-- Entry is created as a **draft — not publicly visible**
-- Admin must review and **Publish** it in the Strapi admin panel
+- If logged out, creates the account first (auto-login), then calls `submitPsychologistApplication()` → `POST /api/psychologists`
+- Entry is created **unpublished** (hidden from the public list)
+- An admin reviews and **Publishes** it from `/admin`
 - Shows success screen after submission
 
 **Props:**
@@ -279,22 +294,22 @@ Provides authentication state and actions to the whole app via `useAuth()`. Cons
 
 ## Pages
 
-> Page bodies live in `src/views/` (renamed from `src/pages/` to avoid colliding with Next.js). Each `src/app/.../page.jsx` route is a thin wrapper that renders the matching view.
+> Page bodies live in `src/views/` (renamed from `src/pages/` to avoid colliding with Next.js). Each `src/app/[locale]/.../page.jsx` route is a thin wrapper that renders the matching view.
 
 ### HomePage (`src/views/HomePage/`)
-- Hero section with CTA buttons
+- Hero section with CTA buttons; the **`LanguageSwitcher` (IT/EN)** sits in the hero top row next to the "Mental Health Support" badge
 - "Are you a licensed psychologist?" CTA section → opens `ApplyModal`
 
 ### PsychologistsPage (`src/views/PsychologistsPage/`)
-- Fetches all psychologists via `@/lib/api`
-- Search bar filters by name, surname, or specialization (client-side)
-- Spinner while loading
+- Server-rendered list passed as `initialPsychologists`; refetches client-side after a review
+- Search bar filters by name, surname, or specialization (client-side, **debounced** via `useDebounce`)
+- Skeleton placeholders while the route loads (`loading.jsx`)
 - Renders a list of `PsychologistCard` components
 
 ### FavoritesPage (`src/views/FavoritesPage/`)
 - Protected route (login required)
 - Fetches all psychologists, then filters to only show favorites
-- Empty state with link to `/psychologists`
+- Skeleton list while loading; empty state with link to `/psychologists`
 
 ### NotFoundPage (`src/views/NotFoundPage/`)
 - Custom 404 page

@@ -136,24 +136,35 @@ lives in a cookie rather than in a JS variable.
 
 `react-router` has been removed. To avoid rewriting every navigation call site, a
 **tiny shim** at `src/lib/router.jsx` re-exports `Link`, `NavLink`, and
-`useNavigate` on top of `next/navigation` / `next/link`. Existing components only
-had to change their **import path** (from `react-router-dom` to `@/lib/router`);
-the props (`to`, `end`, function `className`, `replace`) still behave the same.
+`useNavigate`. It now delegates to **next-intl's locale-aware navigation**, so
+every `to="/x"` is automatically prefixed with the active locale (`/en/x`,
+`/it/x`) — existing components only ever changed their **import path** (from
+`react-router-dom` to `@/lib/router`); the props (`to`, `end`, function
+`className`, `replace`) still behave the same.
 
-App Router pages live under `src/app/`:
+Pages are **locale-prefixed**: they live under `src/app/[locale]/`. A
+[next-intl](https://next-intl.dev) middleware (`src/middleware.js`) resolves the
+locale (URL → cookie → `Accept-Language`) and redirects when it's absent.
 
 | Path | App Router file | Auth required |
 |---|---|---|
-| `/` | `src/app/page.jsx` | No |
-| `/psychologists` | `src/app/psychologists/page.jsx` | No |
-| `/favorites` | `src/app/favorites/page.jsx` | Yes → redirects to `/` |
-| `/privacy` | `src/app/privacy/page.jsx` | No |
-| `*` | `src/app/not-found.jsx` | No |
+| `/{locale}/` | `src/app/[locale]/page.jsx` | No |
+| `/{locale}/psychologists` | `src/app/[locale]/psychologists/page.jsx` | No |
+| `/{locale}/favorites` | `src/app/[locale]/favorites/page.jsx` | Yes → redirects to `/` |
+| `/{locale}/privacy` | `src/app/[locale]/privacy/page.jsx` | No |
+| `/{locale}/admin` | `src/app/[locale]/admin/page.jsx` | Yes (admin) → 404 otherwise |
+| `*` | `src/app/[locale]/not-found.jsx` | No |
 
-- `src/app/layout.jsx` is the **root layout** (HTML shell, fonts, metadata).
-- `src/app/providers.jsx` is the client boundary that holds
-  `SessionProvider` + `AuthProvider` and renders the shared chrome
-  (`Header` / `Footer` / `CookieBanner`) around the routed page.
+- `src/app/[locale]/layout.jsx` is the **root layout** (HTML shell with dynamic
+  `lang`, fonts, localized metadata, `NextIntlClientProvider`).
+- `src/app/[locale]/providers.jsx` is the client boundary that holds
+  `SessionProvider` + `AuthProvider`, renders the shared chrome
+  (`Header` / `Footer` / `CookieBanner`), and exposes the skip-to-content link.
+- `src/app/api/` and `src/app/icon.svg` stay **outside** `[locale]` and are
+  excluded from the middleware matcher.
+
+See **[Internationalization](#internationalization-i18n)** below for the message
+catalogs and locale config.
 
 > **Note on `views/` vs `pages/`.** The former `src/pages/` directory was renamed
 > to `src/views/`, because the name `pages/` collides with Next.js routing
@@ -163,27 +174,38 @@ App Router pages live under `src/app/`:
 ### Folder structure
 
 ```
+messages/               # Translation catalogs (en.json, it.json)
 src/
-├── app/                # Next.js App Router (layout, pages, /api route handlers, providers)
-│   ├── layout.jsx      # Root layout
-│   ├── providers.jsx   # SessionProvider + AuthProvider + Header/Footer/CookieBanner
-│   ├── page.jsx        # Home
-│   ├── psychologists/  # /psychologists
-│   ├── favorites/      # /favorites (protected)
-│   ├── privacy/        # /privacy
-│   ├── not-found.jsx   # 404
+├── middleware.js       # next-intl locale detection / redirect
+├── i18n/               # next-intl config (routing, navigation, request, format)
+├── app/                # Next.js App Router
+│   ├── [locale]/       # Locale-prefixed pages
+│   │   ├── layout.jsx      # Root layout (<html lang>, metadata, NextIntlClientProvider)
+│   │   ├── providers.jsx   # Skip link + SessionProvider + AuthProvider + chrome
+│   │   ├── page.jsx        # Home
+│   │   ├── psychologists/  # /psychologists (+ loading.jsx)
+│   │   ├── favorites/      # /favorites (protected)
+│   │   ├── privacy/        # /privacy
+│   │   ├── admin/          # /admin (+ loading.jsx)
+│   │   ├── error.jsx       # Segment error boundary
+│   │   └── not-found.jsx   # 404
+│   ├── global-error.jsx    # Last-resort boundary
+│   ├── icon.svg            # Favicon (file convention)
 │   └── api/            # Route handlers (psychologists, appointments, me, register, auth)
 ├── components/         # Reusable UI pieces (each with its own CSS module)
 ├── context/            # React context providers (AuthContext)
-├── hooks/              # Custom hooks
-├── views/              # Route-level view components (formerly src/pages/)
+├── hooks/              # Custom hooks (useFavorites, useDebounce)
+├── views/              # Route-level view components (formerly src/pages/); incl. ErrorState
+├── test/intl.jsx       # Test render helper (NextIntlClientProvider wrapper)
 ├── data/
 │   └── psychologists.json  # Seed source
 ├── lib/
 │   ├── api.js          # Same-origin data layer (replaces strapi/strapi.js)
 │   ├── auth.js         # Auth.js (NextAuth) config
+│   ├── email.js        # Resend confirmation email (optional)
+│   ├── rateLimit.js    # Upstash Redis rate limiting (optional)
 │   ├── prisma.js       # PrismaClient singleton
-│   ├── router.jsx      # react-router → next/navigation compatibility shim
+│   ├── router.jsx      # react-router → next-intl navigation shim
 │   ├── serialize.js    # Adds id / documentId / strapiId to records
 │   └── availability.js # Slot generation and working-hours logic
 └── utils/
@@ -201,6 +223,52 @@ src/
 > │   └── availability.js
 > └── strapi/strapi.js    # All Strapi API calls (now src/lib/api.js)
 > ```
+
+---
+
+## Internationalization (i18n)
+
+The UI is fully bilingual (**English / Italian**) via **next-intl v4** with
+locale-prefixed routing.
+
+| Concern | Where |
+|---|---|
+| Locales + default | `src/i18n/routing.js` (`defineRouting`, `en` default, `it`) |
+| Locale detection / redirect | `src/middleware.js` (`createMiddleware`) — matcher skips `/api`, `_next`, files with a dot |
+| Per-request messages | `src/i18n/request.js` (`getRequestConfig`) loads `messages/<locale>.json` |
+| Locale-aware navigation | `src/i18n/navigation.js` (`createNavigation`) — consumed by the `src/lib/router.jsx` shim |
+| Plugin wiring | `next.config.js` wraps the config with `createNextIntlPlugin` |
+| Messages | `messages/en.json`, `messages/it.json` — one namespace per view/component |
+
+**How it threads through the app:**
+
+- `app/[locale]/layout.jsx` validates the locale (`hasLocale` → `notFound`),
+  calls `setRequestLocale` (static rendering), sets `<html lang={locale}>`, and
+  wraps the tree in `NextIntlClientProvider`. `generateStaticParams` pre-renders
+  both locales; `generateMetadata` localizes `<title>`/description.
+- Client components call `useTranslations('Namespace')`; rich text (links, bold)
+  uses `t.rich` with tag handlers.
+- **Dates** are localized through the `Intl` API, not strings: `src/i18n/format.js`
+  maps the app locale to a BCP-47 tag (`en`→`en-GB`, `it`→`it-IT`), used by the
+  calendar, availability editor, and notification/cancel date labels.
+- **Canonical data stays English.** Specialization category *values* are written
+  to the database and matched by the admin editor, so only their display labels
+  are translated — the stored values are never localized.
+
+> **ICU gotcha:** an apostrophe immediately before a `t.rich` tag (e.g. Italian
+> `l'<privacy>`) is treated by ICU as a quoted literal and disables tag parsing.
+> Escape it by doubling the apostrophe (`l''<privacy>`).
+
+To add a locale: extend `routing.locales` and add `messages/<locale>.json`.
+
+### Accessibility
+
+- Skip-to-content link in `providers.jsx`; `<main id="main-content" tabIndex={-1}>`.
+- Dynamic `<html lang>` per locale.
+- ARIA on menus/toggles (`aria-expanded`, `aria-haspopup`, `aria-pressed`,
+  `aria-current`), decorative emoji `aria-hidden`, labelled form inputs.
+- Dropdowns/modals close on `Escape` + outside-click; `:focus-visible` rings.
+- Skeleton shimmer respects `prefers-reduced-motion`.
 
 ---
 
